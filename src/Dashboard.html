@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #16181d; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #2563eb; --accent-text: #ffffff;
+    --s-applied: #64748b; --s-review: #0891b2; --s-assess: #7c3aed; --s-interview: #d97706;
+    --s-offer: #16a34a; --s-rejected: #dc2626; --s-withdrawn: #9ca3af;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --panel: #171a21; --text: #e6e8ec; --muted: #9aa3b2; --line: #272b35;
+      --accent: #3b82f6;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+           padding: 20px 24px 8px; }
+  h1 { font-size: 20px; margin: 0; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 8px;
+         padding: 7px 12px; font: inherit; cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; padding: 8px 24px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 22px; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 8px 24px 32px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .panel h2 { font-size: 14px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .toolbar input { flex: 1 1 200px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line);
+                   background: var(--bg); color: var(--text); font: inherit; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+          background: transparent; color: var(--muted); font: inherit; font-size: 12px; }
+  .chip.on { background: var(--text); color: var(--panel); border-color: var(--text); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; cursor: pointer; user-select: none; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .company { font-weight: 600; }
+  .sub { color: var(--muted); font-size: 12px; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+            color: #fff; white-space: nowrap; }
+  .links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .links a { border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+  .links a.portal { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .dl { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .dl:last-child { border-bottom: none; }
+  .dl .when { font-size: 12px; font-weight: 600; }
+  .dl .when.soon { color: var(--s-rejected); }
+  .empty { padding: 24px 16px; color: var(--muted); text-align: center; }
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text);
+           color: var(--panel); padding: 8px 14px; border-radius: 8px; font-size: 13px; display: none; max-width: 90vw; }
+  @media (max-width: 860px) {
+    header, .stats, main { padding-left: 16px; padding-right: 16px; }
+    main { grid-template-columns: 1fr; }
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
+    td { border: none; padding: 4px 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Trackex</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a class="btn" id="sheetLink" target="_blank">Open sheet</a>
+    <button class="btn primary" id="scanBtn">Scan now</button>
+  </div>
+</header>
+
+<section class="stats" id="stats"></section>
+
+<main>
+  <section class="panel">
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Search company, role, notes…">
+      <div id="chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th data-sort="company">Company / Role</th>
+        <th data-sort="status">Status</th>
+        <th data-sort="lastUpdate">Last update</th>
+        <th>Links</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+
+  <aside class="panel">
+    <h2>Upcoming deadlines &amp; events</h2>
+    <div id="deadlines"></div>
+  </aside>
+</main>
+<div id="toast"></div>
+
+<script>
+let DATA = <?!= dataJson ?>;
+const STATUS_COLOR = {
+  'Applied': 'var(--s-applied)', 'Under Review': 'var(--s-review)', 'Assessment': 'var(--s-assess)',
+  'Interview': 'var(--s-interview)', 'Offer': 'var(--s-offer)', 'Rejected': 'var(--s-rejected)',
+  'Withdrawn': 'var(--s-withdrawn)'
+};
+const ORDER = Object.keys(STATUS_COLOR);
+const state = { q: '', status: 'Active', sort: 'lastUpdate', dir: -1 };
+const ACTIVE = s => !['Rejected', 'Withdrawn'].includes(s);
+
+function el(tag, attrs = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k === 'style') e.style.cssText = v; else e.setAttribute(k, v);
+  }
+  children.flat().forEach(c => c != null && e.append(c.nodeType ? c : document.createTextNode(String(c))));
+  return e;
+}
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+const ago = iso => {
+  if (!iso) return '';
+  const d = Math.round((Date.now() - new Date(iso)) / 86400000);
+  return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago';
+};
+
+function render() {
+  const apps = DATA.applications;
+  document.getElementById('meta').textContent =
+    (DATA.lastScan ? 'Last scan ' + new Date(DATA.lastScan).toLocaleString() : 'Not scanned yet') +
+    ' · Auto-scans every 30 min' + (DATA.claude ? ' · Claude extraction on' : ' · Heuristic mode');
+  document.getElementById('sheetLink').href = DATA.sheetUrl;
+
+  const count = s => apps.filter(a => a.status === s).length;
+  const stats = [
+    ['Total', apps.length], ['Active', apps.filter(a => ACTIVE(a.status)).length],
+    ['Interviews', count('Interview')], ['Assessments', count('Assessment')],
+    ['Offers', count('Offer')], ['Rejected', count('Rejected')]
+  ];
+  document.getElementById('stats').replaceChildren(...stats.map(([l, n]) => el('div', { class: 'stat' }, el('b', {}, n), el('span', {}, l))));
+
+  const chips = ['Active', 'All', ...ORDER].map(s =>
+    el('button', { class: 'chip' + (state.status === s ? ' on' : '') }, s));
+  chips.forEach(c => c.onclick = () => { state.status = c.textContent; render(); });
+  document.getElementById('chips').replaceChildren(...chips);
+
+  const q = state.q.toLowerCase();
+  const rows = apps
+    .filter(a => state.status === 'All' || (state.status === 'Active' ? ACTIVE(a.status) : a.status === state.status))
+    .filter(a => !q || [a.company, a.role, a.notes, a.subject].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => {
+      const k = state.sort;
+      const va = k === 'status' ? ORDER.indexOf(a.status) : (a[k] || '');
+      const vb = k === 'status' ? ORDER.indexOf(b.status) : (b[k] || '');
+      return (va > vb ? 1 : va < vb ? -1 : 0) * state.dir;
+    });
+
+  document.getElementById('rows').replaceChildren(...(rows.length ? rows.map(a => el('tr', {},
+    el('td', {}, el('div', { class: 'company' }, a.company),
+      el('div', { class: 'sub' }, [a.role || 'Role not stated', a.type].filter(Boolean).join(' · ')),
+      a.notes ? el('div', { class: 'sub' }, '📝 ' + a.notes) : null),
+    el('td', {}, el('span', { class: 'status', style: 'background:' + (STATUS_COLOR[a.status] || 'var(--muted)') }, a.status),
+      el('div', { class: 'sub' }, 'Applied ' + fmtDate(a.appliedOn))),
+    el('td', {}, ago(a.lastUpdate), el('div', { class: 'sub', title: a.subject }, (a.subject || '').slice(0, 60))),
+    el('td', {}, el('div', { class: 'links' },
+      a.portal ? el('a', { class: 'portal', href: a.portal, target: '_blank', rel: 'noopener' }, 'Status portal ↗') : null,
+      a.email ? el('a', { href: a.email, target: '_blank', rel: 'noopener' }, 'Email ↗') : null))
+  )) : [el('tr', {}, el('td', { colspan: 4, class: 'empty' }, apps.length ? 'No matches.' : 'No applications found yet — click "Scan now".'))]));
+
+  const dls = DATA.deadlines;
+  document.getElementById('deadlines').replaceChildren(...(dls.length ? dls.map(d => {
+    const when = new Date(d.starts);
+    const soon = when - Date.now() < 3 * 86400000;
+    return el('div', { class: 'dl' },
+      el('div', { class: 'when' + (soon ? ' soon' : '') },
+        when.toLocaleString(undefined, d.allDay ? { weekday: 'short', month: 'short', day: 'numeric' }
+          : { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })),
+      el('div', {}, d.title),
+      el('div', { class: 'links', style: 'margin-top:6px' },
+        d.link ? el('a', { class: 'portal', href: d.link, target: '_blank', rel: 'noopener' }, 'Open ↗') : null,
+        d.email ? el('a', { href: d.email, target: '_blank', rel: 'noopener' }, 'Email ↗') : null));
+  }) : [el('div', { class: 'empty' }, 'Nothing upcoming.')]));
+}
+
+document.getElementById('q').oninput = e => { state.q = e.target.value; render(); };
+document.querySelectorAll('th[data-sort]').forEach(th => th.onclick = () => {
+  const k = th.dataset.sort;
+  state.dir = state.sort === k ? -state.dir : (k === 'company' ? 1 : -1);
+  state.sort = k;
+  render();
+});
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 5000);
+}
+
+document.getElementById('scanBtn').onclick = () => {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.textContent = 'Scanning…';
+  google.script.run
+    .withSuccessHandler(res => { DATA = res.data; render(); toast(res.summary); btn.disabled = false; btn.textContent = 'Scan now'; })
+    .withFailureHandler(err => { toast('Scan failed: ' + err.message); btn.disabled = false; btn.textContent = 'Scan now'; })
+    .scanNowFromDashboard();
+};
+
+render();
+</script>
+</body>
+</html>

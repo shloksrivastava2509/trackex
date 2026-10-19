@@ -1,0 +1,41 @@
+{
+  "name": "trackex",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Automatically tracks job & internship applications from Gmail and puts hackathon deadlines on Google Calendar.",
+  "license": "MIT",
+  "author": "Shlok Srivastava",
+  "homepage": "https://github.com/shloksrivastava2509/trackex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shloksrivastava2509/trackex.git"
+  },
+  "bugs": "https://github.com/shloksrivastava2509/trackex/issues",
+  "keywords": [
+    "google-apps-script",
+    "gmail",
+    "job-tracker",
+    "internship",
+    "hackathon",
+    "google-calendar",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test \"test/**/*.test.js\"",
+    "bundle": "node scripts/bundle.mjs",
+    "check": "npm run lint && npm test && npm run bundle && node --check - < dist/Code.gs",
+    "push": "clasp push",
+    "create-template": "clasp create --type sheets --title Trackex --rootDir src && node scripts/fix-clasp.mjs && clasp push --force"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@google/clasp": "^2.5.0",
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0"
+  }
+}

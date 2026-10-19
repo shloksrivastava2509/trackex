@@ -1,0 +1,7 @@
+node_modules/
+dist/
+paste-ready/
+.clasp.json
+.clasprc.json
+.DS_Store
+*.log

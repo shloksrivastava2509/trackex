@@ -1,0 +1,5 @@
+{
+  "scriptId": "PASTE_THE_SCRIPT_ID_OF_YOUR_OWN_COPY",
+  "rootDir": "src",
+  "filePushOrder": ["src/Config.gs"]
+}
