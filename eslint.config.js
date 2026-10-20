@@ -25,7 +25,8 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
-      globals: { ...globals.es2021, console: 'readonly', ...appsScriptGlobals, ...projectGlobals }
+      // BUNDLED_HTML_ exists only in dist/Code.gs (added by scripts/bundle.mjs).
+      globals: { ...globals.es2021, console: 'readonly', BUNDLED_HTML_: 'readonly', ...appsScriptGlobals, ...projectGlobals }
     },
     rules: {
       // Top-level functions are entry points (menus, triggers) or used from other files.

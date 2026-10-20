@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const FILES = ['Config.gs', 'Store.gs', 'Heuristics.gs', 'Claude.gs', 'Scanner.gs'];
+const FILES = ['Config.gs', 'Store.gs', 'Heuristics.gs', 'Claude.gs', 'Scanner.gs', 'Deploy.gs'];
 
 function load() {
   const ctx = vm.createContext({ console, Session: { getScriptTimeZone: () => 'UTC' } });
@@ -149,5 +149,41 @@ describe('Claude structured-output schema', () => {
     const schema = gs.extractionSchema_();
     walk(schema);
     assert.deepEqual(plain(schema.properties.application.properties.status.enum), plain([...gs.get('STATUSES'), '']));
+  });
+});
+
+describe('parseDeployResult_', () => {
+  test('success → the web-app URL and deployment id', () => {
+    const body = JSON.stringify({
+      deploymentId: 'AKfy123',
+      entryPoints: [{ entryPointType: 'WEB_APP', webApp: { url: 'https://script.google.com/macros/s/AKfy123/exec' } }]
+    });
+    assert.deepEqual(plain(gs.parseDeployResult_(200, body)),
+      { ok: true, url: 'https://script.google.com/macros/s/AKfy123/exec', deploymentId: 'AKfy123' });
+  });
+
+  test('Apps Script API switched off → needsApiToggle', () => {
+    const body = JSON.stringify({ error: { code: 403, message: 'User has not enabled the Apps Script API. Enable it by visiting https://script.google.com/home/usersettings' } });
+    const r = gs.parseDeployResult_(403, body);
+    assert.equal(r.ok, false);
+    assert.equal(r.needsApiToggle, true);
+  });
+
+  test('missing manifest scopes → needsManifest', () => {
+    const body = JSON.stringify({ error: { code: 403, message: 'Request had insufficient authentication scopes.' } });
+    const r = gs.parseDeployResult_(403, body);
+    assert.equal(r.needsManifest, true);
+    assert.equal(r.needsApiToggle, undefined);
+  });
+
+  test('other errors are reported, not treated as the toggle', () => {
+    const r = gs.parseDeployResult_(500, '<html>Server error</html>');
+    assert.equal(r.ok, false);
+    assert.equal(r.needsApiToggle, undefined);
+    assert.match(r.error, /500/);
+  });
+
+  test('200 without a web-app entry point is an error', () => {
+    assert.equal(gs.parseDeployResult_(200, JSON.stringify({ deploymentId: 'x', entryPoints: [] })).ok, false);
   });
 });

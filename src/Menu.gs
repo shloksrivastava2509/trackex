@@ -6,6 +6,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu(APP_NAME)
     .addItem('▶ Start tracking', 'menuStart')
+    .addItem('🔗 Get my Trackex link', 'menuLink')
     .addItem('📊 Open dashboard', 'menuDashboard')
     .addItem('🔄 Scan now', 'menuScan')
     .addSeparator()
@@ -16,7 +17,27 @@ function onOpen() {
 }
 
 function menuStart() {
-  SpreadsheetApp.getUi().alert(`${APP_NAME} is set up`, setup(), SpreadsheetApp.getUi().ButtonSet.OK);
+  const summary = setup();
+  showLinkDialog_(`${APP_NAME} is set up`, summary, safeEnsureWebApp_());
+}
+
+function menuLink() {
+  const url = prop_('WEBAPP_URL');
+  showLinkDialog_(`Your ${APP_NAME} link`, '', url ? { ok: true, url } : safeEnsureWebApp_());
+}
+
+function safeEnsureWebApp_() {
+  try {
+    return ensureWebApp_();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+function showLinkDialog_(title, summary, link) {
+  const t = template_('LinkDialog');
+  t.dataJson = JSON.stringify({ summary, link, settingsUrl: API_SETTINGS_URL, releaseUrl: 'https://github.com/shloksrivastava2509/trackex/releases/latest' }).replace(/</g, '\\u003c');
+  SpreadsheetApp.getUi().showModalDialog(t.evaluate().setWidth(560).setHeight(summary ? 380 : 260), title);
 }
 
 function menuDashboard() {

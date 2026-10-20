@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-20
+
+### Added
+
+- Personal one-click dashboard link: setup publishes your copy as a private web app
+  (*Only myself*) and shows the link, ready to bookmark or install as an app. Re-running
+  setup updates the same deployment, so the link never changes.
+- **Trackex → 🔗 Get my Trackex link** menu item and an **Open as app** button on the dashboard.
+- Single-file install: the release's `Code.gs` now contains the dashboard HTML, so a manual install is one paste.
+- README guide for using a Google account that isn't the browser's default (Apps Script multi-account limitation).
+
+### Changed
+
+- OAuth scopes are now declared explicitly in `appsscript.json`, adding Apps Script
+  project/deployment scopes for the link and full Sheets access so the web app can open your sheet.
+
+### Fixed
+
+- The dashboard can load outside the sheet (in the web app) by resolving the spreadsheet from its saved id.
+
 ## [1.0.0] - 2026-10-20
 
 ### Added
@@ -24,4 +44,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Claude structured extraction with keyword-heuristic fallback.
 - One-click setup from the template sheet menu (Trackex, then Start tracking).
 
+[1.1.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v1.1.0
 [1.0.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v1.0.0

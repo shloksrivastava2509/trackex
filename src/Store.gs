@@ -43,7 +43,7 @@ class Table {
 
 class Store {
   constructor() {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();  // the sheet this script is bound to
+    const ss = spreadsheet_();
     this.apps = new Table(ss, 'Applications', APP_HEADERS);
     this.deadlines = new Table(ss, 'Deadlines', DEADLINE_HEADERS);
     this.state = new Table(ss, '_State', STATE_HEADERS);

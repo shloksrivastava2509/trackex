@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_blank">
+<meta charset="utf-8">
+<style>
+  :root { --bg: #ffffff; --text: #16181d; --muted: #6b7280; --line: #e5e7eb; --accent: #2563eb; --ok: #16a34a; --warn: #d97706; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #171a21; --text: #e6e8ec; --muted: #9aa3b2; --line: #272b35; --accent: #3b82f6; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 4px 4px 0; background: var(--bg); color: var(--text);
+         font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .summary { white-space: pre-line; color: var(--muted); margin: 0 0 16px; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .url { display: flex; gap: 8px; }
+  .url input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+               background: transparent; color: var(--text); font: 12px ui-monospace, Menlo, monospace; }
+  .btn { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px;
+         padding: 8px 12px; font: inherit; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+  .warn { color: var(--warn); font-weight: 600; }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+<p class="summary" id="summary"></p>
+<div class="card" id="link"></div>
+
+<script>
+const DATA = <?!= dataJson ?>;
+document.getElementById('summary').textContent = DATA.summary || '';
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(attrs).forEach(([k, v]) => k === 'class' ? (e.className = v) : e.setAttribute(k, v));
+  kids.flat().forEach(k => k != null && e.append(k.nodeType ? k : document.createTextNode(k)));
+  return e;
+}
+
+function render(r) {
+  const card = document.getElementById('link');
+  if (r.ok) {
+    const input = el('input', { value: r.url, readonly: '' });
+    const copy = el('button', { class: 'btn' }, 'Copy');
+    copy.onclick = () => { input.select(); document.execCommand('copy'); copy.textContent = 'Copied ✓'; };
+    card.replaceChildren(
+      el('h3', {}, '🔗 Your Trackex link'),
+      el('div', { class: 'url' }, input, copy, el('a', { class: 'btn primary', href: r.url }, 'Open ↗')),
+      el('p', { class: 'hint' }, 'Bookmark it — it opens straight into your dashboard. For an app icon in Chrome: ',
+        el('b', {}, '⋮ → Cast, save and share → Install page as app'), '.'));
+    return;
+  }
+  const retry = el('button', { class: 'btn primary' }, 'Try again');
+  retry.onclick = () => {
+    retry.disabled = true; retry.textContent = 'Creating…';
+    google.script.run.withSuccessHandler(render)
+      .withFailureHandler(e => render({ ok: false, error: e.message })).retryWebApp();
+  };
+  if (r.needsManifest) {
+    card.replaceChildren(
+      el('h3', {}, '🔗 One more step for your one-click link'),
+      el('p', {}, 'In Extensions → Apps Script, open ⚙ Project Settings, tick ', el('b', {}, 'Show "appsscript.json"'),
+        ', and replace that file with the one from the ', el('a', { href: DATA.releaseUrl }, 'latest release'),
+        '. Save, then run ', el('b', {}, 'Trackex → Get my Trackex link'), '.'));
+    return;
+  }
+  card.replaceChildren(...(r.needsApiToggle ? [
+    el('h3', {}, '🔗 One more step for your one-click link'),
+    el('p', {}, '1. Open ', el('a', { href: DATA.settingsUrl }, 'Apps Script settings'),
+      ' and switch ', el('b', {}, 'Google Apps Script API'), ' to ', el('b', {}, 'On'), '.'),
+    el('p', {}, '2. Come back and click ', retry)
+  ] : [
+    el('h3', { class: 'warn' }, 'Couldn’t create your link automatically'),
+    el('p', { class: 'hint' }, r.error || ''),
+    el('p', {}, 'Manual way: Extensions → Apps Script → Deploy → New deployment → ⚙ Web app → Deploy, then open the Web app URL. Or ', retry)
+  ]));
+}
+
+render(DATA.link);
+</script>
+</body>
+</html>

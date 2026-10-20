@@ -76,6 +76,7 @@
     <div class="meta" id="meta"></div>
   </div>
   <div style="display:flex;gap:8px">
+    <a class="btn" id="appLink" target="_blank" style="display:none">Open as app ↗</a>
     <a class="btn" id="sheetLink" target="_blank">Open sheet</a>
     <button class="btn primary" id="scanBtn">Scan now</button>
   </div>
@@ -139,6 +140,8 @@ function render() {
     (DATA.lastScan ? 'Last scan ' + new Date(DATA.lastScan).toLocaleString() : 'Not scanned yet') +
     ' · Auto-scans every 30 min' + (DATA.claude ? ' · Claude extraction on' : ' · Heuristic mode');
   document.getElementById('sheetLink').href = DATA.sheetUrl;
+  const appLink = document.getElementById('appLink');
+  if (DATA.appUrl) { appLink.href = DATA.appUrl; appLink.style.display = ''; }
 
   const count = s => apps.filter(a => a.status === s).length;
   const stats = [

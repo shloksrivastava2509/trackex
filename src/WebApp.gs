@@ -4,10 +4,20 @@
  * gives a bookmarkable URL that serves the same page via doGet().
  */
 function renderDashboard_() {
-  const t = HtmlService.createTemplateFromFile('Dashboard');
+  const t = template_('Dashboard');
   // Escape "<" so an email subject containing "</script>" can't break out of the inline JSON.
   t.dataJson = JSON.stringify(getDashboardData()).replace(/</g, '\\u003c');
   return t.evaluate().setTitle(APP_NAME);
+}
+
+/**
+ * The single-file build (dist/Code.gs) inlines the HTML as BUNDLED_HTML_, so a manual
+ * install only needs Code.gs pasted; the clasp/template install uses the .html files.
+ */
+function template_(name) {
+  return typeof BUNDLED_HTML_ !== 'undefined'
+    ? HtmlService.createTemplate(BUNDLED_HTML_[name])
+    : HtmlService.createTemplateFromFile(name);
 }
 
 function doGet() {
@@ -31,8 +41,9 @@ function getDashboardData() {
         title: r.Title, org: r.Organization, kind: r.Kind, starts: iso(r.Starts),
         allDay: r['All Day'] === true || r['All Day'] === 'TRUE', link: r.Link, email: r['Email Link']
       })),
-    sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl(),
+    sheetUrl: spreadsheet_().getUrl(),
     lastScan: prop_('LAST_SCAN') || '',
+    appUrl: prop_('WEBAPP_URL') || '',
     claude: !!prop_('ANTHROPIC_API_KEY')
   };
 }

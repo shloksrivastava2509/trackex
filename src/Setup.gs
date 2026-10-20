@@ -4,6 +4,7 @@
  */
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  setProp_('SHEET_ID', ss.getId());
   new Store().flush();                                   // creates the Applications/Deadlines/_State tabs
   const blank = ss.getSheetByName('Sheet1');
   if (blank && blank.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(blank);
@@ -17,10 +18,7 @@ function setup() {
   ss.toast('Scanning your inbox — the first run can take a few minutes…', APP_NAME, 10);
   const summary = scanInbox();
   return [
-    `${APP_NAME} is tracking your inbox every ${CONFIG.SCAN_EVERY_MINUTES} minutes.`,
-    '',
-    summary,
-    '',
+    `${APP_NAME} now checks your inbox every ${CONFIG.SCAN_EVERY_MINUTES} minutes. ${summary}`,
     `Deadlines go to the "${CONFIG.CALENDAR_NAME}" calendar.`,
     prop_('ANTHROPIC_API_KEY') ? 'Claude extraction: on.' : 'Tip: Trackex → Set Claude API key for much better deadline extraction.'
   ].join('\n');
@@ -37,7 +35,7 @@ function stopTracking() {
  * de-dup index, and clearing it would create duplicate events.
  */
 function resetAndRescan() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = spreadsheet_();
   ['Applications', '_State'].forEach(n => {
     const sh = ss.getSheetByName(n);
     if (sh && sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
@@ -65,12 +63,12 @@ function prepareTemplate() {
     ['Trackex'],
     ['Your inbox, turned into an application tracker.'],
     [''],
-    ['1.  Open the Trackex menu above (next to Help). If you don\'t see it, reload this page.'],
+    ['1.  Open the Trackex menu above (next to Help). It can take ~15 seconds to appear; if it doesn\'t, reload this page.'],
     ['2.  Click ▶ Start tracking and approve Google\'s permission prompt.'],
     ['     Google shows "hasn\'t verified this app" because the script runs as you, in your account: Advanced → Go to Trackex.'],
-    ['3.  Optional: Trackex → 🔑 Set Claude API key for much better deadline extraction.'],
+    ['3.  Save the personal Trackex link it gives you — it opens straight into your dashboard.'],
     [''],
-    ['Then open Trackex → 📊 Open dashboard. Trackex scans every 30 minutes on its own.'],
+    ['Optional: Trackex → 🔑 Set Claude API key for much better deadline extraction. Trackex scans every 30 minutes on its own.'],
     [''],
     ['Source, docs & issues: https://github.com/shloksrivastava2509/trackex']
   ];

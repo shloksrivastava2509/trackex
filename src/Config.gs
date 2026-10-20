@@ -76,6 +76,16 @@ function userTimeZone_() {
   return tzCache_;
 }
 
+// The tracker spreadsheet. getActiveSpreadsheet() is null inside the web app (the direct
+// link), so setup() records the id for those contexts.
+function spreadsheet_() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  const id = prop_('SHEET_ID');
+  if (!id) throw new Error('Trackex is not set up yet: open your Trackex sheet and click Trackex → Start tracking.');
+  return SpreadsheetApp.openById(id);
+}
+
 function deleteProp_(name) {
   PropertiesService.getUserProperties().deleteProperty(name);
 }

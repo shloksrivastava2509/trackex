@@ -19,10 +19,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - name: Upload Code.gs, Dashboard.html, appsscript.json
+      - name: Upload Code.gs, HTML files and appsscript.json
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
             gh release create "$GITHUB_REF_NAME" --title "Trackex $GITHUB_REF_NAME" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" dist/Code.gs dist/Dashboard.html dist/appsscript.json --clobber
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
