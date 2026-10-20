@@ -5,8 +5,10 @@
   <img alt="Trackex" src="assets/logo-light.svg" width="440">
 </picture>
 
-**Stop tracking job applications by hand.** Trackex reads your Gmail, keeps a live tracker of every<br>
-job & internship application, and puts hackathon and assessment deadlines on your Google Calendar.
+**Reads your Gmail so you don't have to.** 
+Tracks every job and internship application on its own 
+and puts hackathon deadlines on Google Calendar, 
+before you remember them a day late.
 
 [![CI](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml/badge.svg)](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/shloksrivastava2509/trackex?color=2563eb)](https://github.com/shloksrivastava2509/trackex/releases)
