@@ -184,10 +184,15 @@ then **Trackex → 🔗 Get my Trackex link**. Manual fallback: in your sheet op
 <details>
 <summary><b>How do I update to a new version?</b></summary>
 
-Paste the files from the [latest release](https://github.com/shloksrivastava2509/trackex/releases/latest)
-into your copy (Extensions → Apps Script): replace `Code.gs`, `Dashboard.html` and `appsscript.json` and add any new
-HTML files. Then click **Trackex → ▶ Start tracking** again; your data and your link stay the same.
-Or make a fresh copy from the button above.
+Keep your data and update the code in place:
+1. In your Trackex sheet, open **Extensions → Apps Script**.
+2. Delete every `.gs` file **except one** (copies of the template have `Calendar.gs`, `Claude.gs`, `Config.gs`, …;
+   keep `Config.gs`). Leave the `.html` files.
+3. Paste the `Code.gs` from the [latest release](https://github.com/shloksrivastava2509/trackex/releases/latest)
+   over that remaining file (it's one file containing everything), and replace `appsscript.json` with the release's. Save.
+4. Reload the sheet and click **Trackex → ♻ Re-check all emails**. Your notes and your Trackex link stay the same.
+
+Or make a fresh copy from the button above and **Stop tracking** in the old one.
 </details>
 
 ## Development
