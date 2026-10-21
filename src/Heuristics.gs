@@ -4,7 +4,13 @@
  */
 const STATUS_RULES = [
   ['Offer', /(pleased to (extend|offer)|offer letter|extend (you )?an offer|congratulations[^.]{0,80}\boffer\b)/i],
-  ['Rejected', /(unfortunately|regret to inform|not (be )?moving forward|decided (not )?to (move|proceed)[^.]{0,40}other|not been selected|were not selected|position has been filled|will not be proceeding|pursue other candidates)/i],
+  ['Rejected', new RegExp([
+    'unfortunately', 'regret to (inform|let you know|share)', 'not (be )?(moving|move) forward', "won'?t be (moving|proceeding)",
+    'will not be (moving|proceeding|progressing|advancing)', 'unable to (move|proceed|progress|offer you)',
+    '(decided|chosen|elected|opted) (not )?to (move|proceed|go|continue|progress)[^.]{0,60}(other|another|different)',
+    'not (been )?selected', 'position has been filled', '(pursue|move forward with|proceed with|progress with) other (candidates|applicants)',
+    'not (a|the right) (fit|match)', 'no longer (being )?considered', 'not be proceeding', 'after careful (consideration|review)[^.]{0,160}(not|other|unable)'
+  ].join('|'), 'i')],
   ['Withdrawn', /(application (has been )?withdrawn|you('ve| have) withdrawn)/i],
   ['Interview', /(invite you to (an? )?interview|interview (invitation|invite|schedul)|schedule (an? )?(interview|call|chat)|phone screen|your availability|book a time)/i],
   ['Assessment', /(online assessment|coding (challenge|assessment|test)|hackerrank|codesignal|codility|take[- ]home|technical assessment|complete the assessment)/i],
@@ -24,7 +30,7 @@ function extractWithHeuristics_(email) {
   const text = `${email.subject}\n${email.body}`;
   const result = {
     category: 'other',
-    application: { company: '', role: '', kind: '', status: '', portal_url: '' },
+    application: { company: '', role: '', kind: '', status: '', portal_url: '', portal_kind: '' },
     events: []
   };
 
@@ -39,7 +45,7 @@ function extractWithHeuristics_(email) {
       role: norm_(role) === norm_(company) ? '' : role,
       kind: /intern/i.test(text) ? 'Internship' : 'Job',
       status: rule[0],
-      portal_url: pickPortalLink_(email.links)
+      ...portalFields_(pickPortalLink_(email.links))
     };
   }
 
@@ -51,7 +57,7 @@ function extractWithHeuristics_(email) {
       start_iso: date.toISOString(),
       end_iso: '',
       all_day: allDay,
-      url: pickPortalLink_(email.links)
+      url: pickPortalLink_(email.links).url
     }));
     if (result.category === 'other' && result.events.length) result.category = 'hackathon_or_event';
   }
@@ -106,16 +112,42 @@ function guessRole_(text) {
   return m ? m[1].trim() : '';
 }
 
+// "Track your application" style wording. Matched against the link text, and against the
+// sentence just before the link when the link itself only says "click here".
+const TRACK_TEXT_RE = /(track|check|view|see|follow|monitor|review|access)\b[^.\n]{0,40}\b(application|status|candidacy|progress)|application status|candidate (home|portal|dashboard|profile|account)|my applications?\b|application portal|status of your application/i;
+const GENERIC_LINK_TEXT_RE = /^(click here|here|click|this link|link|view|open|go|visit|continue|log ?in|sign ?in|access)\W*$/i;
+const STATUS_URL_RE = /(candidate|my-?applications?|application[-_]?status|\/applications?\b|\/track|userhome|jobseeker|\/portal|\/status|\/dashboard)/i;
+const CAREERS_URL_RE = /(career|\bjobs?\b|\/job\/|\/apply|recruit|talent|hiring)/i;
+const NOT_PORTAL_RE = /unsubscribe|privacy|preferences|terms|mailto:|facebook|twitter|instagram|youtube|linkedin\.com\/(company|in)\/|similar jobs|recommended|job alert|more jobs|browse|explore (other |more )?(jobs|roles|opportunities)|search jobs/i;
+
+/**
+ * Picks the link that lets the user check this application's status. An explicit
+ * "track your application" link wins (even when its text is just "click here"); a
+ * candidate/ATS portal is next; a careers site is the fallback.
+ * @return {{url: string, kind: string, score: number}} kind: application_status | careers_portal | ''
+ */
 function pickPortalLink_(links) {
-  let best = '', bestScore = 0;
-  for (const { text, url } of links) {
-    const u = url.toLowerCase(), t = (text || '').toLowerCase();
-    if (/unsubscribe|privacy|preferences|terms|mailto:|facebook|twitter|instagram|linkedin\.com\/(company|in)\//.test(u + ' ' + t)) continue;
+  let best = { url: '', kind: '', score: 0 };
+  for (const { url, text = '', context = '' } of links) {
+    if (NOT_PORTAL_RE.test(`${url} ${text}`)) continue;
     let score = 0;
-    if (isAtsUrl_(u)) score += 3;
-    if (/status|portal|candidate|dashboard|view (your )?application|track|sign ?in|log ?in|my application|register|submit/.test(t)) score += 2;
-    if (/job|career|apply|application/.test(u)) score += 1;
-    if (score > bestScore) { best = url; bestScore = score; }
+    if (TRACK_TEXT_RE.test(text)) score += 10;
+    else if ((!text || GENERIC_LINK_TEXT_RE.test(text)) && TRACK_TEXT_RE.test(context)) score += 9;
+    if (STATUS_URL_RE.test(url)) score += 4;
+    if (isAtsUrl_(url)) score += 2;
+    if (CAREERS_URL_RE.test(url)) score += 1;
+    if (score > best.score) best = { url, kind: score >= 8 ? 'application_status' : 'careers_portal', score };
   }
   return best;
+}
+
+function portalFields_(pick) {
+  return { portal_url: pick.url, portal_kind: pick.kind };
+}
+
+/** How good a stored portal link is, from its kind if known, else its URL alone. */
+function portalRank_(url, kind) {
+  if (!url) return 0;
+  if (kind === 'application_status') return 3;
+  return STATUS_URL_RE.test(url) ? 2 : 1;
 }

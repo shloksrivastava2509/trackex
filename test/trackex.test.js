@@ -63,6 +63,18 @@ describe('extractWithHeuristics_', () => {
     assert.ok(!r.events.some(e => e.start_iso.startsWith('2026-10-20')), 'the year must not be read as a day');
   });
 
+  for (const phrase of [
+    "We won't be moving forward with your application.",
+    'We have chosen to proceed with other applicants whose experience more closely matches.',
+    'After careful consideration, we will not be progressing your application.',
+    'You are no longer being considered for this role.'
+  ]) {
+    test(`rejection phrasing → Rejected: "${phrase.slice(0, 40)}…"`, () => {
+      const r = gs.extractWithHeuristics_(email('"Acme Careers" <jobs@acme.com>', 'Update on your Acme application', `Hi, thanks for applying. ${phrase}`));
+      assert.equal(r.application.status, 'Rejected');
+    });
+  }
+
   test('job alert newsletter → ignored', () => {
     const r = gs.extractWithHeuristics_(email('"LinkedIn" <jobs-noreply@linkedin.com>', '10 new jobs for you',
       'Software Engineer at X. Apply now.'));
@@ -83,18 +95,54 @@ describe('helpers', () => {
     assert.equal(gs.norm_('Acme Technologies Pvt Ltd'), 'acme');
   });
 
-  test('extractLinks_ keeps http(s) links once, decodes &amp;, drops mailto', () => {
-    const links = gs.extractLinks_('<a href="https://a.com/x?y=1&amp;z=2">Go <b>now</b></a>' +
+  test('extractLinks_ keeps http(s) links once, decodes &amp;, drops mailto, records context', () => {
+    const links = gs.extractLinks_('<p>To see where things stand, <a href="https://a.com/x?y=1&amp;z=2">Go <b>now</b></a></p>' +
       '<a href="https://a.com/x?y=1&amp;z=2">dup</a><a href="mailto:x@y.z">mail</a>');
-    assert.deepEqual(plain(links), [{ url: 'https://a.com/x?y=1&z=2', text: 'Go now' }]);
+    assert.deepEqual(plain(links), [{ url: 'https://a.com/x?y=1&z=2', text: 'Go now', context: 'To see where things stand,' }]);
+  });
+});
+
+describe('pickPortalLink_ (status portal link)', () => {
+  const html = body => gs.extractLinks_(body);
+
+  test('"To track your application, click here" beats the careers site', () => {
+    const pick = gs.pickPortalLink_(html(
+      '<p>Visit our <a href="https://careers.acme.com/">careers site</a> for more roles.</p>' +
+      '<p>To track your application, <a href="https://acme.example-ats.com/r/abc123">click here</a>.</p>'));
+    assert.equal(pick.url, 'https://acme.example-ats.com/r/abc123');
+    assert.equal(pick.kind, 'application_status');
   });
 
-  test('pickPortalLink_ prefers ATS / status links over generic ones', () => {
-    const url = gs.pickPortalLink_([
-      { text: 'Our blog', url: 'https://acme.com/blog' },
-      { text: 'Check your status', url: 'https://acme.wd5.myworkdayjobs.com/candidate' }
-    ]);
-    assert.equal(url, 'https://acme.wd5.myworkdayjobs.com/candidate');
+  test('explicit "Track your application" link text wins', () => {
+    const pick = gs.pickPortalLink_(html(
+      '<a href="https://careers.globex.com/jobs">Careers</a><a href="https://globex.com/u/9f">Track your application</a>'));
+    assert.equal(pick.url, 'https://globex.com/u/9f');
+    assert.equal(pick.kind, 'application_status');
+  });
+
+  test('no tracking link → falls back to the careers portal', () => {
+    const pick = gs.pickPortalLink_(html('<a href="https://twitter.com/acme">Twitter</a><a href="https://careers.acme.com/">Acme Careers</a>'));
+    assert.equal(pick.url, 'https://careers.acme.com/');
+    assert.equal(pick.kind, 'careers_portal');
+  });
+
+  test('job-alert and "similar jobs" links are never picked', () => {
+    const pick = gs.pickPortalLink_(html('<a href="https://careers.acme.com/search">See similar jobs</a>'));
+    assert.equal(pick.url, '');
+  });
+});
+
+describe('refinePortal_', () => {
+  const email = { links: gs.extractLinks_('<a href="https://careers.acme.com/">Careers</a>' +
+    '<p>You can check your application status <a href="https://acme.ats.io/s/1">here</a>.</p>') };
+  const data = (url, kind) => ({ category: 'job_application', application: { company: 'Acme', portal_url: url, portal_kind: kind } });
+
+  test('a careers link from Claude is upgraded to the tracking link', () => {
+    assert.equal(gs.refinePortal_(data('https://careers.acme.com/', 'careers_portal'), email).application.portal_url, 'https://acme.ats.io/s/1');
+  });
+
+  test('a URL that is not in the email is never kept', () => {
+    assert.equal(gs.refinePortal_(data('https://made-up.example.com/', 'application_status'), email).application.portal_url, 'https://acme.ats.io/s/1');
   });
 });
 
@@ -102,7 +150,7 @@ describe('Store.upsertApplication', () => {
   const freshStore = () => {
     const Store = gs.get('Store');
     const store = Object.create(Store.prototype);
-    store.apps = { rows: [], add(r) { this.rows.push(r); return r; }, touch() {} };
+    store.apps = { rows: [], add(r) { this.rows.push(r); return r; }, touch() {}, remove(r) { this.rows = this.rows.filter(x => x !== r); } };
     return store;
   };
   const meta = (iso, subject = 's') => ({ date: new Date(iso), subject, emailLink: 'l' });
@@ -121,6 +169,58 @@ describe('Store.upsertApplication', () => {
     s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Interview' }, meta('2026-10-01'));
     s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Under Review' }, meta('2026-10-05'));
     assert.equal(s.apps.rows[0].Status, 'Interview');
+  });
+
+  test('rejection naming the role differently updates the same row', () => {
+    const s = freshStore();
+    s.upsertApplication({ company: 'Stripe Recruiting', role: 'Software Engineering Intern', status: 'Applied' }, meta('2026-09-01'));
+    s.upsertApplication({ company: 'Stripe, Inc.', role: 'Software Engineer Intern - Summer 2027', status: 'Rejected' }, meta('2026-10-01'));
+    assert.equal(s.apps.rows.length, 1);
+    assert.equal(s.apps.rows[0].Status, 'Rejected');
+  });
+
+  test('"SWE Intern" matches "Software Engineer Intern"', () => {
+    const s = freshStore();
+    s.upsertApplication({ company: 'Acme', role: 'Software Engineer Intern', status: 'Applied' }, meta('2026-09-01'));
+    s.upsertApplication({ company: 'Acme', role: 'SWE Intern', status: 'Interview' }, meta('2026-10-01'));
+    assert.equal(s.apps.rows.length, 1);
+    assert.equal(s.apps.rows[0].Status, 'Interview');
+  });
+
+  test('different roles at one company stay separate', () => {
+    const s = freshStore();
+    s.upsertApplication({ company: 'Acme', role: 'Software Engineer Intern', status: 'Applied' }, meta('2026-09-01'));
+    s.upsertApplication({ company: 'Acme', role: 'Data Engineer Intern', status: 'Applied' }, meta('2026-09-02'));
+    assert.equal(s.apps.rows.length, 2);
+  });
+
+  test('a tracking link is not replaced by a later careers link', () => {
+    const s = freshStore();
+    s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Applied', portal_url: 'https://acme.ats.io/s/1', portal_kind: 'application_status' }, meta('2026-09-01'));
+    s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Rejected', portal_url: 'https://careers.acme.com/', portal_kind: 'careers_portal' }, meta('2026-10-01'));
+    assert.equal(s.apps.rows[0]['Portal Link'], 'https://acme.ats.io/s/1');
+  });
+
+  test('a tracking link replaces an earlier careers link', () => {
+    const s = freshStore();
+    s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Applied', portal_url: 'https://careers.acme.com/', portal_kind: 'careers_portal' }, meta('2026-09-01'));
+    s.upsertApplication({ company: 'Acme', role: 'SWE', status: 'Assessment', portal_url: 'https://acme.ats.io/s/1', portal_kind: 'application_status' }, meta('2026-10-01'));
+    assert.equal(s.apps.rows[0]['Portal Link'], 'https://acme.ats.io/s/1');
+  });
+
+  test('mergeDuplicateApplications folds split rows and keeps distinct roles', () => {
+    const s = freshStore();
+    const row = (Company, Role, Status, d, Notes = '') => ({ Company, Role, Status, 'Applied On': new Date(d), 'Last Update': new Date(d), Notes });
+    s.apps.rows.push(
+      row('Stripe', 'Software Engineering Intern', 'Applied', '2026-09-01', 'referral'),
+      row('Stripe Recruiting', 'Software Engineer Intern - Summer 2027', 'Rejected', '2026-10-01'),
+      row('Stripe', 'Data Engineer Intern', 'Applied', '2026-09-05'));
+    assert.equal(s.mergeDuplicateApplications(), 1);
+    assert.equal(s.apps.rows.length, 2);
+    const swe = s.apps.rows.find(r => /Software/.test(r.Role));
+    assert.equal(swe.Status, 'Rejected');
+    assert.equal(swe.Notes, 'referral');
+    assert.equal(swe['Applied On'].toISOString().slice(0, 10), '2026-09-01');
   });
 
   test('role-less update attaches to the existing row for that company', () => {
@@ -185,5 +285,20 @@ describe('parseDeployResult_', () => {
 
   test('200 without a web-app entry point is an error', () => {
     assert.equal(gs.parseDeployResult_(200, JSON.stringify({ deploymentId: 'x', entryPoints: [] })).ok, false);
+  });
+});
+
+describe('parseClaudeResponse_', () => {
+  test('429 and 5xx are retried', () => {
+    assert.equal(gs.parseClaudeResponse_(429, '', 's').retry, true);
+    assert.equal(gs.parseClaudeResponse_(529, '', 's').retry, true);
+  });
+  test('200 with JSON text → data', () => {
+    const body = JSON.stringify({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: '{"category":"other"}' }] });
+    assert.deepEqual(plain(gs.parseClaudeResponse_(200, body, 's')), { data: { category: 'other' } });
+  });
+  test('refusal or 401 → null data (heuristic fallback)', () => {
+    assert.equal(gs.parseClaudeResponse_(200, JSON.stringify({ stop_reason: 'refusal', content: [] }), 's').data, null);
+    assert.equal(gs.parseClaudeResponse_(401, '{}', 's').data, null);
   });
 });

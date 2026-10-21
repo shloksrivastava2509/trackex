@@ -11,7 +11,7 @@ function onOpen() {
     .addItem('🔄 Scan now', 'menuScan')
     .addSeparator()
     .addItem('🔑 Set Claude API key (optional)', 'menuSetKey')
-    .addItem('♻ Reset & rescan', 'menuReset')
+    .addItem('♻ Re-check all emails', 'menuReset')
     .addItem('⏹ Stop tracking', 'menuStop')
     .addToUi();
 }
@@ -61,7 +61,7 @@ function menuSetKey() {
   const key = res.getResponseText().trim();
   if (key) {
     setProp_('ANTHROPIC_API_KEY', key);
-    ui.alert('Saved. Run "Reset & rescan" to re-read past emails with Claude.');
+    ui.alert('Saved. Run "Re-check all emails" to re-read past emails with Claude.');
   } else {
     deleteProp_('ANTHROPIC_API_KEY');
     ui.alert('Key removed — using keyword heuristics.');
@@ -70,8 +70,9 @@ function menuSetKey() {
 
 function menuReset() {
   const ui = SpreadsheetApp.getUi();
-  if (ui.alert('Reset & rescan?', 'Clears the Applications tab and re-reads the last ' +
-    `${CONFIG.INITIAL_LOOKBACK_DAYS} days of email. Calendar events are kept.`, ui.ButtonSet.OK_CANCEL) !== ui.Button.OK) return;
+  if (ui.alert('Re-check all emails?', `Re-reads the last ${CONFIG.INITIAL_LOOKBACK_DAYS} days of email and corrects ` +
+    'statuses, portal links and duplicates in place. Your notes and calendar events are kept. ' +
+    'Big inboxes finish over the next few automatic runs.', ui.ButtonSet.OK_CANCEL) !== ui.Button.OK) return;
   ui.alert(resetAndRescan());
 }
 

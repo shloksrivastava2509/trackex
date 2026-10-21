@@ -15,14 +15,16 @@ const CONFIG = {
 
   // Apps Script kills a run after 6 minutes; stop early and resume next run.
   MAX_RUNTIME_MS: 4.5 * 60 * 1000,
-  MAX_THREADS_PER_RUN: 80,
+  MAX_THREADS_PER_RUN: 150,
+  PAGE_SIZE: 100,          // Gmail threads fetched per search call
+  EXTRACT_BATCH: 8,        // threads extracted in parallel per Claude round trip
 
   SCAN_EVERY_MINUTES: 30, // must be 1, 5, 10, 15 or 30
 
   // Gmail search: only threads matching at least one of these are inspected.
   SEARCH_TERMS: [
-    'application', 'applied', 'applying', 'candidate', 'interview', 'assessment',
-    'internship', 'intern', 'offer', 'recruiting', 'recruiter', 'hiring',
+    'application', 'applied', 'applying', 'candidate', 'candidacy', 'interview', 'assessment',
+    'unfortunately', 'regret', 'internship', 'intern', 'offer', 'recruiting', 'recruiter', 'hiring',
     '"coding challenge"', 'hackerrank', 'codesignal', 'codility',
     'hackathon', 'devpost', 'mlh', 'unstop', 'deadline', 'registration',
     'submission', 'fellowship', 'greenhouse', 'lever', 'workday', 'ashby'

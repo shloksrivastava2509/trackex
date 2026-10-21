@@ -13,13 +13,14 @@ function extractionSchema_() { return {
     application: {
       type: 'object',
       additionalProperties: false,
-      required: ['company', 'role', 'kind', 'status', 'portal_url'],
+      required: ['company', 'role', 'kind', 'status', 'portal_url', 'portal_kind'],
       properties: {
         company: { type: 'string' },
         role: { type: 'string' },
         kind: { type: 'string', enum: ['Job', 'Internship', 'Fellowship', 'Program', 'Other', ''] },
         status: { type: 'string', enum: STATUSES.concat(['']) },
-        portal_url: { type: 'string' }
+        portal_url: { type: 'string' },
+        portal_kind: { type: 'string', enum: ['application_status', 'careers_portal', 'job_posting', ''] }
       }
     },
     events: {
@@ -57,7 +58,13 @@ application (fill only for job_application, otherwise all empty strings):
 - company: the hiring organization, not the ATS vendor (an email from Greenhouse on behalf of Stripe → "Stripe").
 - role: exact role title if stated, else "".
 - status: the stage this email signals.
-- portal_url: copy EXACTLY one URL from the provided link list that best lets the user check status or log into the candidate portal; else the job posting; else "". Never invent URLs, never pick unsubscribe/privacy links.
+- portal_url: copy EXACTLY one URL from the provided link list, in this order of preference:
+  1. the link the email offers for tracking or checking THIS application ("track your application", "view your application status", "check your candidate portal"). Its text is often just "click here" or "here" — use the context shown before the link;
+  2. a candidate-portal / sign-in link where the user can see their applications;
+  3. the company's careers site;
+  4. "".
+  Never invent URLs; never pick unsubscribe, privacy, social-media, job-alert or "similar jobs" links.
+- portal_kind: "application_status" for 1 or 2, "careers_portal" for 3, "job_posting" if it is only the posting, else "".
 
 events: every concrete future date the user may need to act on — registration/submission/application deadlines, hackathon start/end, interview slots, assessment due dates. Skip dates with no action attached.
 - start_iso/end_iso: ISO 8601 with UTC offset. Resolve relative dates ("this Friday", "within 7 days") against the email's sent date. Assume the user's timezone (given below) unless the email names another timezone.
@@ -66,71 +73,89 @@ events: every concrete future date the user may need to act on — registration/
 - title: short and specific, e.g. "HackMIT — project submission deadline".
 - url: the most relevant link from the list (registration/submission page), else "".`;
 
-function extractWithClaude_(email) {
-  const apiKey = prop_('ANTHROPIC_API_KEY');
-  if (!apiKey) return null;
-
+function claudeRequest_(email, apiKey) {
+  const links = email.links.slice(0, CONFIG.CLAUDE_MAX_LINKS).map(l =>
+    `- [${l.text || 'no text'}] → ${l.url}${l.context ? `   (text before link: "…${l.context}")` : ''}`);
   const userContent = [
     `User timezone: ${userTimeZone_()}`,
     `Sent: ${email.date.toISOString()}`,
     `From: ${email.from}`,
     `Subject: ${email.subject}`,
     '',
-    'Links in the email (text → url):',
-    email.links.slice(0, CONFIG.CLAUDE_MAX_LINKS).map(l => `- ${l.text || '(no text)'} → ${l.url}`).join('\n') || '(none)',
+    'Links in the email:',
+    links.join('\n') || '(none)',
     '',
     'Body:',
     email.body.slice(0, CONFIG.CLAUDE_MAX_BODY_CHARS)
   ].join('\n');
 
-  const request = {
-    model: CONFIG.CLAUDE_MODEL,
-    max_tokens: 8000,
-    fallbacks: 'default',
-    output_config: {
-      effort: CONFIG.CLAUDE_EFFORT,
-      format: { type: 'json_schema', schema: extractionSchema_() }
+  return {
+    url: 'https://api.anthropic.com/v1/messages',
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'server-side-fallback-2026-07-01'
     },
-    system: EXTRACTION_SYSTEM,
-    messages: [{ role: 'user', content: userContent }]
-  };
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-      method: 'post',
-      contentType: 'application/json',
-      muteHttpExceptions: true,
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'server-side-fallback-2026-07-01'
+    payload: JSON.stringify({
+      model: CONFIG.CLAUDE_MODEL,
+      max_tokens: 8000,
+      fallbacks: 'default',
+      output_config: {
+        effort: CONFIG.CLAUDE_EFFORT,
+        format: { type: 'json_schema', schema: extractionSchema_() }
       },
-      payload: JSON.stringify(request)
-    });
-    const code = res.getResponseCode();
+      system: EXTRACTION_SYSTEM,
+      messages: [{ role: 'user', content: userContent }]
+    })
+  };
+}
 
-    if (code === 429 || code >= 500) {         // retryable
-      Utilities.sleep(2000 * (attempt + 1));
-      continue;
-    }
-    if (code !== 200) {                         // 400/401/403/404: config problem, don't retry
-      console.error(`Claude API ${code}: ${res.getContentText().slice(0, 500)}`);
-      return null;
-    }
-
-    const msg = JSON.parse(res.getContentText());
-    if (msg.stop_reason === 'refusal' || msg.stop_reason === 'max_tokens') {
-      console.warn(`Claude stop_reason=${msg.stop_reason} for "${email.subject}"`);
-      return null;
-    }
-    const text = (msg.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    try {
-      return JSON.parse(text);
-    } catch {
-      console.error(`Unparseable Claude output for "${email.subject}": ${text.slice(0, 300)}`);
-      return null;
-    }
+/** Pure: one HTTP response → {data} (null data = give up, use heuristics) or {retry: true}. */
+function parseClaudeResponse_(code, text, subject) {
+  if (code === 429 || code >= 500) return { retry: true };
+  if (code !== 200) {                         // 400/401/403/404: config problem, don't retry
+    console.error(`Claude API ${code}: ${String(text).slice(0, 500)}`);
+    return { data: null };
   }
-  console.error('Claude API: retries exhausted');
-  return null;
+  const msg = JSON.parse(text);
+  if (msg.stop_reason === 'refusal' || msg.stop_reason === 'max_tokens') {
+    console.warn(`Claude stop_reason=${msg.stop_reason} for "${subject}"`);
+    return { data: null };
+  }
+  const out = (msg.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  try {
+    return { data: JSON.parse(out) };
+  } catch {
+    console.error(`Unparseable Claude output for "${subject}": ${out.slice(0, 300)}`);
+    return { data: null };
+  }
+}
+
+/**
+ * Extracts many emails concurrently with UrlFetchApp.fetchAll — one round trip per batch
+ * instead of one per email. Returns an array aligned with `emails`; null entries mean
+ * "fall back to heuristics". Rate-limited/5xx requests are retried together.
+ */
+function extractManyWithClaude_(emails) {
+  const apiKey = prop_('ANTHROPIC_API_KEY');
+  const results = emails.map(() => null);
+  if (!apiKey || !emails.length) return results;
+
+  let pending = emails.map((_, i) => i);
+  for (let attempt = 0; attempt < 3 && pending.length; attempt++) {
+    if (attempt) Utilities.sleep(2000 * attempt);
+    const responses = UrlFetchApp.fetchAll(pending.map(i => claudeRequest_(emails[i], apiKey)));
+    const retry = [];
+    responses.forEach((res, k) => {
+      const i = pending[k];
+      const r = parseClaudeResponse_(res.getResponseCode(), res.getContentText(), emails[i].subject);
+      if (r.retry) retry.push(i); else results[i] = r.data;
+    });
+    pending = retry;
+  }
+  if (pending.length) console.error(`Claude API: retries exhausted for ${pending.length} email(s)`);
+  return results;
 }

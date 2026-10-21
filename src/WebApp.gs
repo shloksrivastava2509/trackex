@@ -25,7 +25,7 @@ function doGet() {
 }
 
 function getDashboardData() {
-  const store = new Store();
+  const store = new Store({ withState: false });
   const iso = v => (v instanceof Date ? v.toISOString() : (v ? String(v) : ''));
   const now = Date.now();
   return {

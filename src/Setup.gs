@@ -30,16 +30,14 @@ function stopTracking() {
 }
 
 /**
- * Clears the Applications sheet and scan state, then re-reads the whole lookback window
- * (e.g. after adding a Claude key). Deadlines are kept: that sheet is the calendar's
- * de-dup index, and clearing it would create duplicate events.
+ * Re-reads every email in the lookback window (e.g. after adding a Claude key or
+ * upgrading) and updates existing rows in place: statuses, portal links and duplicate
+ * merges are corrected while your Notes are kept. Deadlines are untouched (that tab is
+ * the calendar's de-dup index). Large inboxes finish over the next few scheduled runs.
  */
 function resetAndRescan() {
-  const ss = spreadsheet_();
-  ['Applications', '_State'].forEach(n => {
-    const sh = ss.getSheetByName(n);
-    if (sh && sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
-  });
+  const sh = spreadsheet_().getSheetByName('_State');
+  if (sh && sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
   deleteProp_('BACKFILL_DONE');
   return scanInbox();
 }

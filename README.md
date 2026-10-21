@@ -30,7 +30,7 @@ into the tracker — **you never add a row by hand.**
 - 📥 **Fully automatic** — scans Gmail every 30 minutes and backfills the last 180 days on first run.
 - 🧭 **Status that moves itself** — Applied → Under Review → Assessment → Interview → Offer / Rejected, updated as replies arrive (even in the same thread).
 - ⚡ **One-click access** — setup gives you a personal Trackex link that opens straight into your dashboard. Bookmark it or install it as an app.
-- 🔗 **Every link in one window** — each application has a one-click **Status portal** (Greenhouse, Lever, Workday, Ashby, …) and **Email** button.
+- 🔗 **Every link in one window** — each application links straight to its **"track your application"** page (even when the email only says *click here*), falling back to the company's careers portal, plus the source **Email**.
 - 📅 **Deadlines on your calendar** — hackathon registration & submission, online assessments, interviews and program deadlines go to a dedicated *Trackex Deadlines* calendar with reminders 3 days, 1 day and 2 hours before. Duplicate reminder emails never create duplicate events.
 - 🧠 **Optional Claude extraction** — add an Anthropic API key and Trackex reads emails like a person would ("submissions close Friday 11:59pm ET"). Without a key it uses built-in keyword rules.
 - 🔒 **Runs entirely in your Google account** — no server, no sign-up, nothing to host.
@@ -51,7 +51,7 @@ into the tracker — **you never add a row by hand.**
 | **1. Copy** | Click **[Make a copy](https://docs.google.com/spreadsheets/d/1qcuh3wWmPBe5nZuYhTvmzUwp-seUriVBQ3ZqtHWYJcc/copy)** and confirm. You get your own private Trackex sheet in your **default** Google account ([using another account?](#using-a-google-account-thats-not-your-browsers-default)). |
 | **2. Start** | In your copy, open the **Trackex** menu (it appears next to Help after ~15 seconds) → **▶ Start tracking**, and approve Google's permission prompt. |
 | **3. Save your link** | Setup shows **your personal Trackex link**. Bookmark it, or in Chrome use **⋮ → Cast, save and share → Install page as app** for a dock / home-screen icon. |
-| **Optional** | **Trackex → 🔑 Set Claude API key** with a key from [console.anthropic.com](https://console.anthropic.com), then **♻ Reset & rescan**. |
+| **Optional** | **Trackex → 🔑 Set Claude API key** with a key from [console.anthropic.com](https://console.anthropic.com), then **♻ Re-check all emails**. |
 
 That's it. Trackex runs every 30 minutes on its own, and your link opens the dashboard in one click.
 
@@ -87,7 +87,8 @@ flowchart LR
 | "Your application to Acme" with no role | Attached to your most recently active Acme application. |
 | The backfill reads newest emails first | Status only changes from a *newer* email; a generic "still reviewing" note never demotes Interview → Under Review. |
 | Five "48 hours left!" reminders | One calendar event, de-duplicated by organization + kind + day. |
-| Finding the portal link | Claude must pick a URL that actually appears in the email (it can't invent one); the fallback scores links by ATS domain and link text. |
+| Finding the status link | The email's own *"track your application / click here"* link wins — Trackex reads the sentence around each link, not just its text. A candidate portal is next, the careers site last. Links must really appear in the email, and a careers link never replaces a tracking link. |
+| Rejection worded differently | Companies are normalised (*Stripe Recruiting* = *Stripe, Inc.*) and roles match fuzzily (*SWE Intern* = *Software Engineering Intern – Summer 2027*), so the update lands on your existing row; earlier duplicates are merged automatically. |
 
 ## Permissions & privacy
 
