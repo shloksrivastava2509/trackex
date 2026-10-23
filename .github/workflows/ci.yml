@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   pull_request:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   check:
-    name: Lint, test & bundle
+    name: Lint, typecheck, test & build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
-      - run: npm run bundle
-      - name: Syntax-check the bundle
-        run: node --check - < dist/Code.gs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: trackex-bundle
-          path: dist/
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
