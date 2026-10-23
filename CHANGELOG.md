@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-24
+
+Trackex is now a hosted web app: sign in with Google, nothing to copy or install.
+
+### Added
+
+- Next.js 16 web app with Sign in with Google (Auth.js v5, offline access, JWT sessions).
+- Background sync every 15 minutes via a GitHub Actions workflow calling a `CRON_SECRET`-protected `/api/cron` endpoint; first sync backfills the last 180 days.
+- Incremental sync using Gmail's `after:` query and a processed-message table, so no email is extracted twice.
+- Dedicated "Trackex" Google Calendar for interviews, assessments and hackathon/registration/submission/application deadlines, at the exact time in the user's time zone, with popup reminders 1 day and 1 hour before (all-day items: 9 AM and 6 PM the day before).
+- Neon Postgres storage with Drizzle ORM; Google refresh tokens encrypted with AES-256-GCM (`TOKEN_KEY`).
+- Dashboard with stats, search and filters, "Sync now", and "Disconnect & delete data".
+- Public `/demo` page with sample data and a `/privacy` page.
+- `docs/SETUP.md` owner setup guide.
+
+### Changed
+
+- Permissions are narrower: `gmail.readonly` and `calendar.app.created` (only the calendar Trackex creates), plus openid/email/profile.
+- Claude extraction runs up to 8 emails in parallel with structured JSON output; the keyword-rule fallback is kept.
+- Email bodies are no longer stored; only application and event metadata.
+- Documentation rewritten for v2.
+
+### Removed
+
+- The Google Apps Script version and the Google Sheet template.
+- The clasp tooling and bundling scripts.
+
 ## [1.2.0] - 2026-10-21
 
 ### Fixed
@@ -67,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Claude structured extraction with keyword-heuristic fallback.
 - One-click setup from the template sheet menu (Trackex, then Start tracking).
 
+[2.0.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v2.0.0
 [1.2.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v1.2.0
 [1.1.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v1.1.0
 [1.0.0]: https://github.com/shloksrivastava2509/trackex/releases/tag/v1.0.0

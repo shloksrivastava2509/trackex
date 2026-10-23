@@ -5,17 +5,19 @@
   <img alt="Trackex" src="assets/logo-light.svg" width="440">
 </picture>
 
-**Reads your Gmail so you don't have to.** 
-Tracks every job and internship application on its own 
-and puts hackathon deadlines on Google Calendar, 
+**Reads your Gmail so you don't have to.**
+Tracks every job and internship application on its own
+and puts hackathon deadlines on Google Calendar,
 before you remember them a day late.
 
 [![CI](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml/badge.svg)](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/shloksrivastava2509/trackex?color=2563eb)](https://github.com/shloksrivastava2509/trackex/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
-[![Built with Google Apps Script](https://img.shields.io/badge/built%20with-Google%20Apps%20Script-4285F4?logo=google&logoColor=white)](https://developers.google.com/apps-script)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 
-<a href="https://docs.google.com/spreadsheets/d/1qcuh3wWmPBe5nZuYhTvmzUwp-seUriVBQ3ZqtHWYJcc/copy"><img alt="Make a copy — free, 1-minute setup" src="https://img.shields.io/badge/%E2%96%B6%20Make%20a%20copy-free%2C%201--minute%20setup-2563eb?style=for-the-badge"></a>
+<!-- TODO: replace with the real deployment URL -->
+<a href="https://trackex.vercel.app/demo"><img alt="Try the live demo" src="https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-no%20login-2563eb?style=for-the-badge"></a>
+<a href="docs/SETUP.md"><img alt="Deploy your own" src="https://img.shields.io/badge/Deploy%20your%20own-15%20minutes-0f172a?style=for-the-badge"></a>
 
 </div>
 
@@ -25,203 +27,134 @@ before you remember them a day late.
 
 Applying to 50 internships means 50 confirmation emails, a dozen assessment links, interview invites
 buried in threads, and hackathon deadlines you only remember the day after. Trackex turns your inbox
-into the tracker — **you never add a row by hand.**
+into the tracker. **You sign in with Google once and never add a row by hand.**
 
-- 📥 **Fully automatic** — scans Gmail every 30 minutes and backfills the last 180 days on first run.
-- 🧭 **Status that moves itself** — Applied → Under Review → Assessment → Interview → Offer / Rejected, updated as replies arrive (even in the same thread).
-- ⚡ **One-click access** — setup gives you a personal Trackex link that opens straight into your dashboard. Bookmark it or install it as an app.
-- 🔗 **Every link in one window** — each application links straight to its **"track your application"** page (even when the email only says *click here*), falling back to the company's careers portal, plus the source **Email**.
-- 📅 **Deadlines on your calendar** — hackathon registration & submission, online assessments, interviews and program deadlines go to a dedicated *Trackex Deadlines* calendar with reminders 3 days, 1 day and 2 hours before. Duplicate reminder emails never create duplicate events.
-- 🧠 **Optional Claude extraction** — add an Anthropic API key and Trackex reads emails like a person would ("submissions close Friday 11:59pm ET"). Without a key it uses built-in keyword rules.
-- 🔒 **Runs entirely in your Google account** — no server, no sign-up, nothing to host.
+## Features
+
+- **Fully automatic.** Every 15 minutes Trackex reads new job, internship and hackathon emails. The first sync backfills the last 180 days (and continues across runs if needed).
+- **Status that moves itself.** Applied, Under Review, Assessment, Interview, Offer, Rejected, Withdrawn. Status only moves forward, from newer emails.
+- **Rejections find the right application.** Companies are normalised and roles matched fuzzily, so a differently worded rejection still lands on the right row. Duplicates are merged.
+- **Every link in one window.** Each application links to the email's own "track your application" page (even when the link text is just "click here"), falling back to the candidate portal, then the careers site, plus the source email.
+- **Deadlines on your calendar.** Interviews, assessments and assignments, and hackathon, registration, submission and application deadlines go into a dedicated **Trackex** Google Calendar at the exact time in your time zone.
+- **Reminders that fire.** Popups 1 day and 1 hour before. All-day items remind at 9 AM and 6 PM the day before. Deadlines show as a 30-minute block ending at the deadline.
+- **Optional Claude extraction.** With an Anthropic API key, emails are read like a person would. Without one, built-in keyword rules take over.
+- **Dashboard.** Stats, search and filters, "Track application", "Careers portal", "Email" and "Calendar" links, upcoming events, **Sync now**, and **Disconnect & delete data**.
+- **Public demo.** [`/demo`](https://trackex.vercel.app/demo) shows sample data with no login.
 
 ## What it looks like
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/dashboard-dark.png">
-  <img alt="Trackex dashboard showing applications with status badges, portal links and upcoming deadlines" src="assets/dashboard-light.png">
+  <img alt="Trackex dashboard showing applications with status badges, portal links and upcoming events" src="assets/dashboard-light.png">
 </picture>
 
-<sub>Dashboard with sample data. It opens inside your sheet from <b>Trackex → Open dashboard</b>.</sub>
-
-## Quick start
-
-| | |
-|---|---|
-| **1. Copy** | Click **[Make a copy](https://docs.google.com/spreadsheets/d/1qcuh3wWmPBe5nZuYhTvmzUwp-seUriVBQ3ZqtHWYJcc/copy)** and confirm. You get your own private Trackex sheet in your **default** Google account ([using another account?](#using-a-google-account-thats-not-your-browsers-default)). |
-| **2. Start** | In your copy, open the **Trackex** menu (it appears next to Help after ~15 seconds) → **▶ Start tracking**, and approve Google's permission prompt. |
-| **3. Save your link** | Setup shows **your personal Trackex link**. Bookmark it, or in Chrome use **⋮ → Cast, save and share → Install page as app** for a dock / home-screen icon. |
-| **Optional** | **Trackex → 🔑 Set Claude API key** with a key from [console.anthropic.com](https://console.anthropic.com), then **♻ Re-check all emails**. |
-
-That's it. Trackex runs every 30 minutes on its own, and your link opens the dashboard in one click.
-
-> [!TIP]
-> To create your link, Trackex needs the **Google Apps Script API** switched on for your account. If it isn't,
-> setup shows a one-time link to [script.google.com/home/usersettings](https://script.google.com/home/usersettings)
-> and a **Try again** button. Lost your link? **Trackex → 🔗 Get my Trackex link**.
-
-> [!NOTE]
-> Google will say **"Google hasn't verified this app"**. That's expected: Trackex is a script that runs
-> as *you*, inside *your* account, and isn't a published Google product. Click **Advanced → Go to Trackex**.
-> You can review the full source in [`src/`](src) before approving.
+<sub>Dashboard with sample data.</sub>
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    G[📥 Gmail] -->|every 30 min| S[scanInbox]
+    G[Gmail] -->|every 15 min<br/>GitHub Actions cron| S[Sync]
     S --> X{Extract}
     X -->|API key set| C[Claude<br/>structured JSON]
     X -->|no key| H[Keyword<br/>heuristics]
-    C --> D[(Your Google Sheet<br/>Applications · Deadlines)]
-    H --> D
-    C --> K[📅 Trackex Deadlines<br/>calendar]
-    H --> K
-    D --> B[📊 Dashboard]
+    C --> M[Match and merge]
+    H --> M
+    M --> D[(Neon Postgres)]
+    M --> K[Trackex Google Calendar<br/>1 day + 1 hour reminders]
+    D --> B[Dashboard]
 ```
 
 | Problem | How Trackex handles it |
 |---|---|
-| Only read relevant mail | A Gmail search over job & hackathon keywords. Promotions is included, since Devpost and MLH emails often land there. |
-| A rejection arrives as a reply in an old thread | Trackex remembers the last message it processed per thread, not a "done" label, so new replies are always read. |
-| "Your application to Acme" with no role | Attached to your most recently active Acme application. |
-| The backfill reads newest emails first | Status only changes from a *newer* email; a generic "still reviewing" note never demotes Interview → Under Review. |
-| Five "48 hours left!" reminders | One calendar event, de-duplicated by organization + kind + day. |
-| Finding the status link | The email's own *"track your application / click here"* link wins — Trackex reads the sentence around each link, not just its text. A candidate portal is next, the careers site last. Links must really appear in the email, and a careers link never replaces a tracking link. |
-| Rejection worded differently | Companies are normalised (*Stripe Recruiting* = *Stripe, Inc.*) and roles match fuzzily (*SWE Intern* = *Software Engineering Intern – Summer 2027*), so the update lands on your existing row; earlier duplicates are merged automatically. |
+| Only read relevant mail | A Gmail search filter over job, internship and hackathon mail. |
+| Never extract an email twice | Incremental syncs use Gmail's `after:` query plus a processed-message table. |
+| Rejection worded differently | Company normalisation and fuzzy role matching update your existing row. |
+| Status regressions | Status only moves forward from newer emails. |
+| Finding the status link | The email's own "track your application" link wins, then the candidate portal, then the careers site. |
+| Duplicate reminders | Duplicate applications are merged and events are not re-created. |
 
-## Permissions & privacy
-
-Trackex asks for these permissions on first run:
+## Privacy & permissions
 
 | Permission | Why |
 |---|---|
-| Gmail | Read job/hackathon emails and add the `Trackex` label to the ones it used. Trackex never sends, deletes or archives mail. |
-| Google Calendar | Create the *Trackex Deadlines* calendar and its events. |
-| Google Sheets | Store applications and deadlines in your Trackex spreadsheet. The direct link needs this to open the sheet; Trackex reads and writes no other spreadsheet. |
-| Apps Script projects & deployments | Publish **your copy** as a private web app (*Only myself*) to give you a one-click dashboard link. |
-| External requests | Call `api.anthropic.com` — **only** if you set a Claude API key. |
-| Triggers | Run the scan every 30 minutes. |
+| `gmail.readonly` | Read job and hackathon emails. Trackex never sends, deletes or labels mail. |
+| `calendar.app.created` | Create and manage only the calendar Trackex creates. It cannot touch your other calendars. |
+| `openid`, `email`, `profile` | Sign you in. |
 
-- All data stays in your Google account: your sheet, your calendar.
-- Your API key is stored in Apps Script **user properties**: private to you and never copied with the sheet.
-- Without a key, no email content leaves Google. With a key, each matched email is sent to Anthropic's API for extraction.
-- To stop: **Trackex → ⏹ Stop tracking**. To remove access entirely: [Google Account → Third-party connections](https://myaccount.google.com/connections).
+- Google refresh tokens are encrypted at rest with AES-256-GCM.
+- Email bodies are **not stored**, only application and event metadata.
+- Claude sees email content only if an API key is configured.
+- **Disconnect & delete data** removes the Trackex calendar, revokes Google access and deletes all your rows.
+- See the in-app [`/privacy`](app/privacy/page.tsx) page and [SECURITY.md](SECURITY.md).
 
-## Configuration
+## Self-hosting in 15 minutes
 
-Settings live at the top of [`src/Config.gs`](src/Config.gs) (Extensions → Apps Script in your copy):
+You need free accounts on Neon, Google Cloud, Vercel and GitHub. The full, numbered guide is in **[docs/SETUP.md](docs/SETUP.md)**. In short:
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `INITIAL_LOOKBACK_DAYS` | `180` | How far back the first scan reads |
-| `INCREMENTAL_LOOKBACK_DAYS` | `7` | Window for each regular scan |
-| `SCAN_EVERY_MINUTES` | `30` | Scan frequency (1, 5, 10, 15 or 30) |
-| `SEARCH_TERMS` | job & hackathon keywords | Gmail search terms that select candidate threads |
-| `REMINDERS_MIN` | `[4320, 1440, 120]` | Popup reminders before each event, in minutes |
-| `CLAUDE_MODEL` | `claude-opus-5-5` | Model used for extraction. `claude-haiku-5-5` is ~40× cheaper. |
-| `CALENDAR_NAME` | `Trackex Deadlines` | Calendar that receives deadlines |
+1. Fork the repo and create a Neon database (`npm run db:push`).
+2. Create a Google Cloud OAuth client with the Gmail and Calendar APIs enabled, and **publish** the consent screen.
+3. Deploy to Vercel with the environment variables from [`.env.example`](.env.example).
+4. Add `APP_URL` and `CRON_SECRET` as GitHub Actions secrets so the 15-minute sync runs.
 
-## Using a Google account that's not your browser's default
+## Tech stack
 
-Google Apps Script has a long-standing limitation with **multiple signed-in accounts**: copying the template,
-the Trackex menu and your dashboard link can fail with *"Sorry, unable to open the file at present"* when the
-account you use isn't the browser's default (the first one you signed in with).
+| Layer | Choice |
+|---|---|
+| App | Next.js 16 (App Router), React 19, TypeScript, Tailwind v4 |
+| Auth | Auth.js v5 (Google, offline access, JWT sessions) |
+| Data | Neon Postgres with Drizzle ORM |
+| Extraction | Anthropic Claude (`CLAUDE_MODEL`, default `claude-opus-5-5`), structured JSON, up to 8 emails in parallel; keyword-rule fallback |
+| Google APIs | Plain `fetch` against the REST APIs (no `googleapis` package) |
+| Hosting | Vercel free plan |
+| Background sync | GitHub Actions (`.github/workflows/sync.yml`) |
+| Tests | Vitest |
 
-The reliable fix is a browser window where that account is the **only** one signed in:
+## Project structure
 
-- **Chrome profile (recommended):** click your profile picture (top-right) → **Add** → sign in with that account.
-  Make the copy and run setup there, then install your Trackex link as an app *from that profile*; it opens in that
-  profile every time.
-- **Incognito / private window:** sign in with just that account, then use the **Make a copy** button. Fine for setup;
-  for daily use, prefer a profile.
-
-If you can't copy at all, install into a blank sheet instead:
-1. Create a blank sheet at [sheets.new](https://sheets.new) and open **Extensions → Apps Script**.
-2. Under ⚙ **Project Settings**, tick *Show "appsscript.json" manifest file in editor*.
-3. From the [latest release](https://github.com/shloksrivastava2509/trackex/releases/latest), paste **`Code.gs`** over the
-   default code (a single file with everything inside) and replace **`appsscript.json`**. Save.
-4. Reload the sheet and click **Trackex → ▶ Start tracking**.
-
-## FAQ
-
-<details>
-<summary><b>The first scan says "more remaining". Is something wrong?</b></summary>
-
-No. Apps Script stops any run after 6 minutes, so Trackex saves its progress and continues on the next
-30-minute run. A large inbox can take a few runs to backfill; **Scan now** speeds it up.
-</details>
-
-<details>
-<summary><b>An application has the wrong status or company.</b></summary>
-
-Edit the row in the **Applications** tab; a newer email will still update it. The keyword fallback is decent
-at statuses but weaker at company names and dates; setting a Claude API key fixes most misreads.
-</details>
-
-<details>
-<summary><b>What does Claude extraction cost?</b></summary>
-
-One API request per matched email. A typical inbox produces a few matches a day. Switch `CLAUDE_MODEL` to
-`claude-haiku-5-5` in `Config.gs` for the cheapest option.
-</details>
-
-<details>
-<summary><b>"Sorry, unable to open the file at present" when making a copy</b></summary>
-
-You're signed in to several Google accounts and making the copy as one that isn't the browser's default. Google's
-Apps Script doesn't support that; see [Using a Google account that's not your browser's default](#using-a-google-account-thats-not-your-browsers-default).
-</details>
-
-<details>
-<summary><b>My Trackex link wasn't created.</b></summary>
-
-Switch on **Google Apps Script API** at [script.google.com/home/usersettings](https://script.google.com/home/usersettings),
-then **Trackex → 🔗 Get my Trackex link**. Manual fallback: in your sheet open Extensions → Apps Script →
-**Deploy → New deployment → ⚙ Web app** (*Execute as: Me*, *Who has access: Only myself*) → **Deploy**, and bookmark the Web app URL.
-</details>
-
-<details>
-<summary><b>How do I update to a new version?</b></summary>
-
-Keep your data and update the code in place:
-1. In your Trackex sheet, open **Extensions → Apps Script**.
-2. Delete every `.gs` file **except one** (copies of the template have `Calendar.gs`, `Claude.gs`, `Config.gs`, …;
-   keep `Config.gs`). Leave the `.html` files.
-3. Paste the `Code.gs` from the [latest release](https://github.com/shloksrivastava2509/trackex/releases/latest)
-   over that remaining file (it's one file containing everything), and replace `appsscript.json` with the release's. Save.
-4. Reload the sheet and click **Trackex → ♻ Re-check all emails**. Your notes and your Trackex link stay the same.
-
-Or make a fresh copy from the button above and **Stop tracking** in the old one.
-</details>
+```
+app/                  Next.js routes: landing, dashboard, demo, privacy, api/
+├── api/              auth, cron, sync, timezone, account/delete
+components/           Dashboard UI and shared components
+lib/
+├── extract/          Claude extraction, keyword heuristics, link handling
+├── match.ts          company normalisation, fuzzy matching, merging
+├── sync.ts           per-user sync loop
+├── gmail.ts          Gmail REST client
+├── calendar.ts       Trackex calendar and events
+├── google.ts         OAuth token refresh and fetch helper
+├── crypto.ts         AES-256-GCM token encryption
+└── db/               Drizzle schema and client
+test/v2/              Vitest suites
+docs/SETUP.md         Owner setup guide
+```
 
 ## Development
 
 ```bash
 git clone https://github.com/shloksrivastava2509/trackex.git && cd trackex
 npm ci
-npm run check        # lint + tests + bundle
+cp .env.example .env.local   # fill in, see docs/SETUP.md
+npm run db:push              # create tables
+npm run dev                  # http://localhost:3000
 ```
 
-Push to **your own** copy of the sheet with [clasp](https://github.com/google/clasp): copy
-`.clasp.json.example` to `.clasp.json`, set your copy's script ID, then `npx clasp login && npm run push`.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run check` | Lint, typecheck and tests |
+| `npm run build` | Production build |
+| `npm run db:push` | Push the schema to your database |
 
-```
-src/
-├── Config.gs      settings, statuses, ATS domains
-├── Scanner.gs     main loop: Gmail search → extract → store
-├── Claude.gs      Claude structured-output extraction
-├── Heuristics.gs  keyword fallback extractor
-├── Store.gs       sheet persistence + status rules
-├── Calendar.gs    calendar events + de-duplication
-├── Menu.gs        the Trackex sheet menu
-├── Setup.gs       start / stop / reset
-├── Deploy.gs      personal dashboard link (Apps Script API)
-├── WebApp.gs      dashboard data
-├── Dashboard.html dashboard UI
-└── LinkDialog.html "your Trackex link" dialog
-```
+## Limitations
+
+- **100-user cap.** Trackex is a personal project, so Google shows an "unverified app" screen once (Advanced, then Go to Trackex) and limits unverified apps to 100 users.
+- **Restricted scope.** Gmail is a restricted scope. Unlimited public use would need Google verification and a paid CASA security assessment, which is out of scope.
+- **15-minute granularity.** Sync runs every 15 minutes via GitHub Actions. Scheduled workflows pause after 60 days of repo inactivity.
+
+## Looking for v1 (Google Sheets)?
+
+v1.0.0 to v1.2.0 were a Google Apps Script bound to a copied Google Sheet. They are no longer maintained, but the releases remain on [GitHub](https://github.com/shloksrivastava2509/trackex/releases).
 
 ## Contributing
 
