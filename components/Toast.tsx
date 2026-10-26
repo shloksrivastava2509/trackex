@@ -10,7 +10,7 @@ export default function Toast({ message, onClose }: { message: string; onClose: 
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-5 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-lg px-4 py-2 text-[13px] shadow-lg"
+      className="fixed bottom-5 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded px-4 py-2.5 text-[13px] shadow-lg"
       style={{ background: 'var(--text)', color: 'var(--panel)' }}
     >
       {message}

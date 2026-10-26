@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Logo from '@/components/Logo';
+import SuiteBar from '@/components/SuiteBar';
 
 export const metadata: Metadata = { title: 'Privacy — Trackex' };
 
@@ -10,9 +10,12 @@ export default function Privacy() {
   const h = 'mb-2 mt-8 text-lg font-semibold';
   const p = 'm-0 mb-3 text-[14px] leading-relaxed';
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-      <Link href="/" aria-label="Trackex home"><Logo height={32} /></Link>
-      <h1 className="mb-1 mt-8 text-3xl font-bold tracking-tight">Privacy policy</h1>
+    <>
+    <SuiteBar section="Privacy policy" />
+    <main className="mx-auto my-6 w-full max-w-3xl px-4">
+      <article className="card px-5 py-6 sm:px-10 sm:py-10">
+      <div className="eyebrow">Legal</div>
+      <h1 className="mb-1 mt-1 text-3xl font-semibold tracking-tight">Privacy policy</h1>
       <p className="m-0 muted">Trackex is a personal, open-source project. This page explains exactly what it does with your data.</p>
 
       <h2 className={h}>What Trackex reads</h2>
@@ -41,7 +44,9 @@ export default function Privacy() {
       <h2 className={h}>Contact</h2>
       <p className={p}>Questions or concerns? Open an issue on <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer">GitHub</a>. The source code is available at <a href={GITHUB} target="_blank" rel="noopener noreferrer">github.com/shloksrivastava2509/trackex</a> (MIT).</p>
 
-      <p className="mt-10 text-[13px] muted"><Link href="/">← Back to Trackex</Link></p>
+      <p className="mb-0 mt-10 text-[13px] muted"><Link href="/">← Back to Trackex</Link></p>
+      </article>
     </main>
+    </>
   );
 }
