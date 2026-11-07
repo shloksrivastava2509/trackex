@@ -10,6 +10,6 @@ export async function POST() {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return new Response('Unauthorized', { status: 401 });
-  const result = await syncUser(userId, Date.now() + 45_000);
+  const result = await syncUser(userId, Date.now() + 30_000);
   return Response.json({ summary: summarize(result), data: await getDashboardData(userId) });
 }

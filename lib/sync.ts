@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
-import { getAccessToken, GoogleAuthError } from '@/lib/google';
+import { getAccessToken, GoogleAuthError, GoogleRateLimitError } from '@/lib/google';
 import { backfillQuery, getMessages, incrementalQuery, listMessageIds } from '@/lib/gmail';
 import { buildEvent, ensureCalendar, insertEvent } from '@/lib/calendar';
 import { extractWithClaude } from '@/lib/extract/claude';
@@ -24,11 +24,14 @@ export interface SyncResult {
   complete: boolean;
   /** Another run (cron or "Sync now") was already syncing this user. */
   busy?: boolean;
+  /** Google's quota ran out; progress is saved and the next run continues. Not an error. */
+  rateLimited?: boolean;
   error?: string;
 }
 
 export function summarize(r: SyncResult): string {
   if (r.busy) return 'A sync is already running — results will appear shortly.';
+  if (r.rateLimited) return `Google asked Trackex to slow down. Read ${r.processed} email(s) so far; continuing automatically in a few minutes.`;
   if (r.error === 'reauth') return 'Google access expired — please sign in again.';
   if (r.error) return `Sync failed: ${r.error}`;
   const parts = [`Read ${r.processed} new email(s)`, `+${r.newApps} application(s)`, `+${r.newEvents} calendar event(s)`];
@@ -152,6 +155,12 @@ export async function syncUser(userId: string, deadline: number): Promise<SyncRe
     }).where(eq(schema.users.id, userId));
     return result;
   } catch (e) {
+    if (e instanceof GoogleRateLimitError) {
+      console.warn(`Sync paused for user ${userId}: Google rate limit`);
+      await db().update(schema.users).set({ syncError: null, lastSyncAt: new Date(), syncLockUntil: null })
+        .where(eq(schema.users.id, userId));
+      return { ...result, complete: false, rateLimited: true };
+    }
     const reauth = e instanceof GoogleAuthError;
     const message = reauth ? 'reauth' : e instanceof Error ? e.message.slice(0, 300) : String(e);
     if (!reauth) console.error(`Sync failed for user ${userId}:`, e);

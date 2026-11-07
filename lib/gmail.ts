@@ -51,7 +51,7 @@ export interface GmailMessage {
 }
 
 export async function getMessages(token: string, ids: string[], userEmail: string): Promise<Email[]> {
-  const raw = await mapLimit(ids, 10, id => googleFetch<GmailMessage>(token, `${API}/messages/${id}?format=full`));
+  const raw = await mapLimit(ids, 4, id => googleFetch<GmailMessage>(token, `${API}/messages/${id}?format=full`));
   return raw.map(m => decodeMessage(m, userEmail));
 }
 

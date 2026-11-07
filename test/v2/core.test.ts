@@ -3,6 +3,7 @@ import { buildEvent, instantToLocal, localToInstant, parseWhen, TIMED_REMINDERS_
 import { decodeMessage, incrementalQuery, type GmailMessage } from '@/lib/gmail';
 import { EXTRACTION_SCHEMA, parseExtraction } from '@/lib/extract/claude';
 import { encrypt, decrypt } from '@/lib/crypto';
+import { isRateLimited } from '@/lib/google';
 import { STATUSES, type ExtractedEvent } from '@/lib/types';
 
 const src = { emailLink: 'https://mail.google.com/mail/?authuser=a%40b.c#all/t1', subject: 'Interview invite' };
@@ -151,5 +152,15 @@ describe('token encryption', () => {
     const parts = sealed.split('.');
     parts[3] = Buffer.from('tampered').toString('base64url');
     expect(() => decrypt(parts.join('.'))).toThrow();
+  });
+});
+
+describe('rate limits', () => {
+  test('Gmail quota 403s count as rate limits; other 403s do not', () => {
+    const quota = JSON.stringify({ error: { code: 403, message: "Quota exceeded for quota metric 'Total Query Cost'", errors: [{ reason: 'rateLimitExceeded' }] } });
+    expect(isRateLimited(403, quota)).toBe(true);
+    expect(isRateLimited(429, '')).toBe(true);
+    expect(isRateLimited(403, '{"error":{"message":"Insufficient Permission"}}')).toBe(false);
+    expect(isRateLimited(404, quota)).toBe(false);
   });
 });

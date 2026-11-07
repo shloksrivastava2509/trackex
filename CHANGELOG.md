@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- First sync no longer fails with "Quota exceeded ... Units per minute per user". Gmail reports its quota as HTTP 403, which was not retried. Quota errors now back off (honouring `Retry-After`), message fetches run 4 at a time instead of 10, and if the quota still does not recover the sync pauses and continues on the next run instead of showing an error.
+
 ### Changed
 
 - Corporate-style redesign: navy top bar, status navigation pane with counts, summary tiles, pipeline bar, dense sortable applications grid, agenda panel with date blocks and "Due soon" flags, Export CSV. Landing and privacy pages restyled to match.
