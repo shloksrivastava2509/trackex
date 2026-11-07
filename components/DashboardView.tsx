@@ -11,7 +11,7 @@ import Toast from '@/components/Toast';
 import Modal from '@/components/Modal';
 import TimezoneReporter from '@/components/TimezoneReporter';
 
-type Filter = 'Active' | 'All' | Status;
+type Filter = 'Active' | 'Archived' | 'All' | Status;
 type SortKey = 'company' | 'status' | 'appliedOn' | 'lastUpdate';
 const INACTIVE: Status[] = ['Rejected', 'Withdrawn', 'Offer'];
 const WEEK_MS = 7 * 86_400_000;
@@ -149,14 +149,20 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
   const apps = data.applications;
   const counts = useMemo(() => {
     const by = Object.fromEntries(STATUSES.map((s) => [s, apps.filter((a) => a.status === s).length])) as Record<Status, number>;
-    return { by, total: apps.length, active: apps.filter((a) => !INACTIVE.includes(a.status)).length };
+    const live = apps.filter((a) => !a.archived);
+    return {
+      by, total: apps.length, active: live.filter((a) => !INACTIVE.includes(a.status)).length,
+      archived: apps.length - live.length,
+      interviews: live.filter((a) => a.status === 'Interview').length,
+      assessments: live.filter((a) => a.status === 'Assessment').length
+    };
   }, [apps]);
   const updatedThisWeek = now === null ? null : apps.filter((a) => now - new Date(a.lastUpdate).getTime() < WEEK_MS).length;
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = apps.filter((a) => {
-      if (filter === 'Active' ? INACTIVE.includes(a.status) : filter !== 'All' && a.status !== filter) return false;
+      if (filter === 'Active' ? INACTIVE.includes(a.status) || a.archived : filter === 'Archived' ? !a.archived : filter !== 'All' && a.status !== filter) return false;
       return !q || `${a.company} ${a.role} ${a.type} ${a.status}`.toLowerCase().includes(q);
     });
     const { key, dir } = sort;
@@ -178,8 +184,8 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
     setSort((s) => (s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: key === 'company' ? 1 : -1 }));
 
   const lastSynced = data.lastSyncAt ? (now ? relTime(data.lastSyncAt, now) : '…') : 'never';
-  const filterCount = (f: Filter) => (f === 'Active' ? counts.active : f === 'All' ? counts.total : counts.by[f]);
-  const filterTitle = filter === 'Active' ? 'Active applications' : filter === 'All' ? 'All applications' : filter;
+  const filterCount = (f: Filter) => (f === 'Active' ? counts.active : f === 'Archived' ? counts.archived : f === 'All' ? counts.total : counts.by[f]);
+  const filterTitle = filter === 'Active' ? 'Active applications' : filter === 'All' ? 'All applications' : filter === 'Archived' ? 'Archived applications' : filter;
   const pct = (n: number) => (counts.total ? Math.round((n / counts.total) * 100) : 0);
 
   const sortHead = (label: string, key: SortKey, cls = '') => (
@@ -226,8 +232,8 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
   const initialLetter = (data.user?.name || data.user?.email || '?').trim().charAt(0).toUpperCase();
   const kpis: { label: string; value: number; note: string; color: string }[] = [
     { label: 'Total applications', value: counts.total, note: updatedThisWeek === null ? '…' : `${updatedThisWeek} updated in the last 7 days`, color: 'var(--accent)' },
-    { label: 'Active pipeline', value: counts.active, note: `${pct(counts.active)}% of all applications`, color: 'var(--s-review)' },
-    { label: 'Interviews & assessments', value: counts.by.Interview + counts.by.Assessment, note: `${counts.by.Interview} interviews · ${counts.by.Assessment} assessments`, color: 'var(--s-interview)' },
+    { label: 'Active pipeline', value: counts.active, note: counts.archived ? `${counts.archived} archived automatically` : `${pct(counts.active)}% of all applications`, color: 'var(--s-review)' },
+    { label: 'Interviews & assessments', value: counts.interviews + counts.assessments, note: `${counts.interviews} interviews · ${counts.assessments} assessments`, color: 'var(--s-interview)' },
     { label: 'Offers', value: counts.by.Offer, note: `${counts.by.Rejected} rejected · ${counts.by.Withdrawn} withdrawn`, color: 'var(--s-offer)' }
   ];
 
@@ -285,6 +291,7 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
              style={{ background: 'var(--panel)', borderRight: '1px solid var(--line)' }}>
           <div className="eyebrow px-2.5 pb-1.5">Views</div>
           {navButton('Active', 'Active')}
+          {navButton('Archived', 'Archived')}
           {navButton('All', 'All applications')}
           <div className="eyebrow mt-5 px-2.5 pb-1.5">By status</div>
           {STATUSES.map((s) => navButton(s, s, STATUS_COLOR[s]))}
@@ -372,7 +379,7 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
                 <span>{filterTitle} <span className="num font-normal muted">({visible.length})</span></span>
                 <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
                   <select aria-label="Filter by status" className="input lg:hidden" value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
-                    {(['Active', 'All', ...STATUSES] as Filter[]).map((f) => <option key={f} value={f}>{f} ({filterCount(f)})</option>)}
+                    {(['Active', 'Archived', 'All', ...STATUSES] as Filter[]).map((f) => <option key={f} value={f}>{f} ({filterCount(f)})</option>)}
                   </select>
                   <label className="relative block w-full sm:w-64">
                     <span className="pointer-events-none absolute left-2.5 top-1/2 flex -translate-y-1/2 muted">{Icon.search}</span>
@@ -400,7 +407,7 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
                               <div className="truncate font-semibold">{a.company}</div>
-                              <StatusChip status={a.status} />
+                              <StatusChip status={a.status} archived={a.archived} />
                             </div>
                             <div className="truncate text-[13px] muted">{a.role || 'Role not detected'}{a.type ? ` · ${a.type}` : ''}</div>
                             <div className="mt-1 text-xs muted">Applied {shortDate(a.appliedOn)} · updated {now ? relTime(a.lastUpdate, now) : '…'}</div>
@@ -435,7 +442,7 @@ export default function DashboardView({ data: initial, mode }: { data: Dashboard
                                 </div>
                               </div>
                             </td>
-                            <td><StatusChip status={a.status} /></td>
+                            <td><StatusChip status={a.status} archived={a.archived} /></td>
                             <td className="num whitespace-nowrap">{shortDate(a.appliedOn)}</td>
                             <td className="whitespace-nowrap muted" title={shortDate(a.lastUpdate)}>{now ? relTime(a.lastUpdate, now) : '…'}</td>
                             <td>{links(a)}</td>

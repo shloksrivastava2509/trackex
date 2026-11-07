@@ -79,7 +79,7 @@ category:
 - "other": everything else. Return empty application fields and no events.
 
 application (fill only for job_application, otherwise all empty strings):
-- company: the hiring organization, not the ATS vendor (an email from Greenhouse on behalf of Stripe → "Stripe").
+- company: the hiring organization, not the ATS vendor (an email from Greenhouse on behalf of Stripe → "Stripe"). If a college placement cell or a person forwards an employer's mail, the company is the employer named in the subject or body, never the college or the sender ("FW: Urgent: Accenture \\ Assessment guidelines" from a professor → "Accenture").
 - role: exact role title if stated, else "".
 - status: the stage this email signals.
 - portal_url: copy EXACTLY one URL from the provided link list, in this order of preference:

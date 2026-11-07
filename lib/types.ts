@@ -90,6 +90,9 @@ export interface MatchMeta {
 
 // ---- UI contract (serialisable: dates as ISO strings) ----
 
+/** Set when an application is automatically moved out of the Active view (see lib/archive.ts). */
+export type ArchiveReason = 'expired' | 'quiet';
+
 export interface ApplicationView {
   id: string;
   company: string;
@@ -103,6 +106,7 @@ export interface ApplicationView {
   emailLink: string;
   lastSubject: string;
   notes: string;
+  archived?: ArchiveReason | null;
 }
 
 export interface EventView {

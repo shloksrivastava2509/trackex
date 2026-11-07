@@ -1,3 +1,4 @@
+import { markArchived } from '@/lib/archive';
 import type { ApplicationView, DashboardData, EventView, Status, PortalKind } from '@/lib/types';
 
 const DAY = 86_400_000;
@@ -26,7 +27,8 @@ export function demoData(now = new Date()): DashboardData {
     app(5, 'Globex', 'Data Analyst', 'Job', 'Offer', 35, 1, 'application_status'),
     app(6, 'Pied Piper', 'Compression Research Fellow', 'Fellowship', 'Rejected', 40, 12, ''),
     app(7, 'Initech', 'QA Engineer', 'Job', 'Withdrawn', 30, 18, 'careers_portal'),
-    app(8, 'Umbrella Health', 'Platform Engineer Intern', 'Internship', 'Applied', 2, 2, 'careers_portal')
+    app(8, 'Umbrella Health', 'Platform Engineer Intern', 'Internship', 'Applied', 2, 2, 'careers_portal'),
+    app(9, 'Stark Industries', 'Systems Engineer Intern', 'Internship', 'Assessment', 26, 19, 'application_status')
   ];
 
   const ev = (
@@ -47,7 +49,7 @@ export function demoData(now = new Date()): DashboardData {
 
   return {
     user: { name: 'Demo user', email: 'demo@example.com', image: '' },
-    applications, events,
+    applications: markArchived(applications, events, t), events,
     lastSyncAt: new Date(t - 7 * 60_000).toISOString(),
     syncError: null, backfilling: false, claude: true
   };

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automatic archiving: an Assessment or Interview with no upcoming event and a week of silence is marked **Expired**, and an Applied or Under Review application with no news for 60 days is marked **Quiet**. Both leave the Active view and appear under a new **Archived** view, and they come back on their own if a new email arrives. Nothing is deleted.
+
+### Fixed
+
+- Mail forwarded by a college placement cell ("FW: Urgent: Accenture \\ Assessment guidelines" from a professor) is now filed under the employer named in the subject instead of the forwarding person. Claude extraction gets the same rule.
+
 ### Fixed
 
 - First sync no longer fails with "Quota exceeded ... Units per minute per user". Gmail reports its quota as HTTP 403, which was not retried. Quota errors now back off (honouring `Retry-After`), message fetches run 4 at a time instead of 10, and if the quota still does not recover the sync pauses and continues on the next run instead of showing an error.

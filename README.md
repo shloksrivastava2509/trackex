@@ -42,6 +42,7 @@ Applying to 50 internships means 50 confirmation emails, a dozen assessment link
 
 - **Fully automatic.** Every 15 minutes Trackex reads new job, internship and hackathon emails. The first sync backfills the last 180 days (and continues across runs if needed).
 - **Status that moves itself.** Applied, Under Review, Assessment, Interview, Offer, Rejected, Withdrawn. Status only moves forward, from newer emails.
+- **Expired items archive themselves.** An assessment or interview whose date has passed is marked *Expired*, and applications that go quiet for 60 days are marked *Quiet*. Both move to an **Archived** view instead of cluttering Active, and return if a new email arrives.
 - **Rejections find the right application.** Companies are normalised and roles matched fuzzily, so a differently worded rejection still lands on the right row. Duplicates are merged.
 - **Every link in one window.** Each application links to the email's own "track your application" page (even when the link text is just "click here"), falling back to the candidate portal, then the careers site, plus the source email.
 - **Deadlines on your calendar.** Interviews, assessments and assignments, and hackathon, registration, submission and application deadlines go into a dedicated **Trackex** Google Calendar at the exact time in your time zone.

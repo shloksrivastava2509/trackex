@@ -134,7 +134,26 @@ export function findDatedSentences(email: Email): { iso: string; allDay: boolean
   return out.slice(0, 5);
 }
 
-export function guessCompany(email: Pick<Email, 'from'>): string {
+const ACADEMIC_DOMAIN_RE = /\.(edu|ac)(\.[a-z]{2})?$/;
+const ACADEMIC_NAME_RE = /placement|\bdr\.?\s|\bprof(essor)?\b|\[[^\]]*\]|training and placement|\bt&p\b|career (cell|services)/i;
+
+/**
+ * College placement cells forward employer mail ("FW: Urgent: Accenture \\ Assessment guidelines").
+ * The sender is then the college, so the employer is the first name in the subject.
+ */
+export function companyFromSubject(subject: string): string {
+  const s = subject.replace(/^(\s*(re|fw|fwd)\s*:\s*|\s*(urgent|important|reminder|action required)\s*[:\-]\s*)+/gi, '');
+  const first = s.split(/\s*[\\|/–—]\s*|\s+-\s+|:\s+/)[0].trim();
+  return /^[A-Z][\w&.' ]{1,40}$/.test(first) && first.split(' ').length <= 4 ? first : '';
+}
+
+export function guessCompany(email: Pick<Email, 'from'> & { subject?: string }): string {
+  const fromName = (email.from.match(/^\s*"?([^"<]+?)"?\s*</) || [])[1] || '';
+  const fromDomain = ((email.from.match(/@([\w.-]+)/) || [])[1] || '').toLowerCase();
+  if (email.subject && (ACADEMIC_DOMAIN_RE.test(fromDomain) || ACADEMIC_NAME_RE.test(fromName))) {
+    const fromSubject = companyFromSubject(email.subject);
+    if (fromSubject) return fromSubject;
+  }
   const display = (email.from.match(/^\s*"?([^"<]+?)"?\s*</) || [])[1] || '';
   const cleaned = display
     .replace(/\b(via|from)\b.*$/i, '')
