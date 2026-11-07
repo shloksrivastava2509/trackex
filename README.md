@@ -5,29 +5,38 @@
   <img alt="Trackex" src="assets/logo-light.svg" width="440">
 </picture>
 
-**Reads your Gmail so you don't have to.**
-Tracks every job and internship application on its own
-and puts hackathon deadlines on Google Calendar,
-before you remember them a day late.
+**A web app that turns your inbox into an application tracker.**
+Sign in with Google and Trackex finds your job and internship emails,
+keeps every application's status current, and schedules interviews,
+assessments and hackathon deadlines on Google Calendar with reminders.
 
 [![CI](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml/badge.svg)](https://github.com/shloksrivastava2509/trackex/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/shloksrivastava2509/trackex?color=2563eb)](https://github.com/shloksrivastava2509/trackex/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 
-<!-- TODO: replace with the real deployment URL -->
-<a href="https://trackex.vercel.app/demo"><img alt="Try the live demo" src="https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-no%20login-2563eb?style=for-the-badge"></a>
+<a href="https://trackex-steel.vercel.app/demo"><img alt="Try the live demo" src="https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-no%20login-2563eb?style=for-the-badge"></a>
 <a href="docs/SETUP.md"><img alt="Deploy your own" src="https://img.shields.io/badge/Deploy%20your%20own-15%20minutes-0f172a?style=for-the-badge"></a>
 
 </div>
 
 ---
 
-## Why Trackex
+## What is Trackex?
 
-Applying to 50 internships means 50 confirmation emails, a dozen assessment links, interview invites
-buried in threads, and hackathon deadlines you only remember the day after. Trackex turns your inbox
-into the tracker. **You sign in with Google once and never add a row by hand.**
+Trackex is a **hosted web app** (Next.js, Postgres, Google OAuth). It is no longer a Google Sheets script:
+there is nothing to copy, no spreadsheet and no script editor. You open the site, click **Sign in with Google**, and it does the rest.
+
+| | |
+|---|---|
+| **You do** | Sign in once and allow Gmail (read-only) and a Trackex-only calendar. |
+| **Trackex reads** | New job, internship and hackathon emails, every 15 minutes. The first run covers the last 180 days. |
+| **Trackex keeps** | One row per application with its status, the direct "track your application" link, and the source email. |
+| **Trackex schedules** | Interviews, assessments and deadlines on a dedicated **Trackex** calendar, with reminders 1 day and 1 hour before. |
+
+Applying to 50 internships means 50 confirmation emails, a dozen assessment links and interview invites buried in threads. Trackex makes the inbox the tracker, so you never add a row by hand.
+
+> **Coming from v1?** v1.0 to v1.2 were a Google Apps Script bound to a copied Sheet. v2 replaces it with the app above. The v1 releases stay on [GitHub](https://github.com/shloksrivastava2509/trackex/releases) but are no longer maintained. See [Looking for v1](#looking-for-v1-google-sheets).
 
 ## Features
 
@@ -38,8 +47,8 @@ into the tracker. **You sign in with Google once and never add a row by hand.**
 - **Deadlines on your calendar.** Interviews, assessments and assignments, and hackathon, registration, submission and application deadlines go into a dedicated **Trackex** Google Calendar at the exact time in your time zone.
 - **Reminders that fire.** Popups 1 day and 1 hour before. All-day items remind at 9 AM and 6 PM the day before. Deadlines show as a 30-minute block ending at the deadline.
 - **Optional Claude extraction.** With an Anthropic API key, emails are read like a person would. Without one, built-in keyword rules take over.
-- **Dashboard.** Stats, search and filters, "Track application", "Careers portal", "Email" and "Calendar" links, upcoming events, **Sync now**, and **Disconnect & delete data**.
-- **Public demo.** [`/demo`](https://trackex.vercel.app/demo) shows sample data with no login.
+- **Workspace-style dashboard.** A status navigation pane with counts, summary tiles, a pipeline bar, a sortable applications grid with "Track status", "Careers" and email links, an upcoming-events panel, **Export CSV**, **Sync now**, and **Disconnect & delete data**. Light and dark themes.
+- **Public demo.** [`/demo`](https://trackex-steel.vercel.app/demo) shows sample data with no login.
 
 ## What it looks like
 
@@ -48,7 +57,7 @@ into the tracker. **You sign in with Google once and never add a row by hand.**
   <img alt="Trackex dashboard showing applications with status badges, portal links and upcoming events" src="assets/dashboard-light.png">
 </picture>
 
-<sub>Dashboard with sample data.</sub>
+<sub>Dashboard with sample data. Try it live at the [demo](https://trackex-steel.vercel.app/demo).</sub>
 
 ## How it works
 

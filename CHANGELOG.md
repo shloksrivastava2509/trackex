@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Corporate-style redesign: navy top bar, status navigation pane with counts, summary tiles, pipeline bar, dense sortable applications grid, agenda panel with date blocks and "Due soon" flags, Export CSV. Landing and privacy pages restyled to match.
+- README now explains Trackex as a hosted web app and links the live demo.
+
 ## [2.0.0] - 2026-10-24
 
 Trackex is now a hosted web app: sign in with Google, nothing to copy or install.
